@@ -1,0 +1,62 @@
+%% content.tex
+%%
+
+%% ==============================
+\chapter{Introduction}
+\label{ch:Introduction}
+%% ==============================
+
+\section{Motivation}
+
+Modern photorealisitic rendering is commonly done by path tracers. With an ever expanding complexity of modelled scenes the presence of many light sources greatly contributes to a natural and appealing image. Path tracers utilize Next Event Estimation to deterministically connect ray intersections (shading points) with light sources. This process is a critical step in modern path tracers and takes up to 50\% of today's rendering time, partially because calculating the visibility term is costly. As sampling all lights quickly becomes too expensive for scenes with more then a few dozen lights, sampling only one or some lights per intersection is a common approach to greatly reduce the rendering time of scenes with a lot of occlusion respectively localized light influences. In an attempt to reduce the variance it is apparent that you want to sample light sources with a higher contribution with a higher probability and try to spare any unnecessary work of sampling occluded light sources. An important aspect is to stay unbiased during this process. We investigate current techniques and propose a new solution to this problem.
+
+
+%% ==============
+\chapter{Fundamentals}
+\label{ch:Fundamentals}
+%% ==============
+
+%% ==============
+\chapter{Previous Work}
+\label{ch:Prev}
+%% ==============
+
+\section{Current Work}
+
+Early work on this topic from \cite{Shirley:1996:MCT:226150.226151} introduces the construction of probability density functions (PDF) for simple area light shapes. Sampling within an area light is a problem on it's own, but is well understood for basic shapes. Further, those PDFs can be combined to inherit multiple light sources. \cite{Shirley:1996:MCT:226150.226151} discuss weighting the sampling probability of the light sources uniformly and energy based which produces reasonable results in simple scenes but quickly breaks down with many light sources and occlusion. They further propose a technique to spatially divide the scene with an octree to account for more localized influences. Still calculations remain based on emitted energy and spatial distance and fail to attribute for any kind of occlusion.
+
+More recent work from \cite{Estevez:2017:ISM:3084363.3085028} is inspired by lightcuts (\cite{Walter2005LightcutsAS}) and proposes the construction of a lighttree. The leafs are light sources which get pooled into clusters by position as well as orientation. Later, to choose a  light source the tree is traversed down until a cluster with a fitting position and normal cone is found. All lights below the found cut are then sampled uniformly or energy based.
+
+\cite{Vevoda:2016:ADI:3005274.3005283} propose a technique which utilizes a light tree and cuts as well (\cite{Walter2005LightcutsAS}). The scene is subdivided into a regular grid where each cell does hold a cut of the light tree. Similar to \cite{Estevez:2017:ISM:3084363.3085028} this cut can be used to importance sample given light sources. The kicker is that a cut is calculated lazily only when a shading point within an empty cell is rendered. Other shading points within this cell will later reuse the same cut.
+
+Another recent work from \cite{DBLP:journals/corr/DahmK17} utilizes machine learning. It more generally learns light transport paths by learning a $\mathcal{Q}$-function with reinforcement learning. The $\mathcal{Q}$-functions are distributed in screen space and form a Voronoi diagram which guides sampling.
+
+Similar problems can be found on work about Instant Radiosity (\cite{keller1997instant} \cite{Walter2005LightcutsAS} \cite{dachsbacher2014scalable}). Due to the large amount of virtual point lights several techniques had been developed to scale sublinearly. We have to consider these techniques with caution, as one of our main goals is to stay unbiased, while most work on Instant Radiosity is dependent on biased approximations.
+
+%% ==============
+\chapter{Photon-based Next Event Estimation}
+\label{ch:PNEE}
+%% ==============
+
+\section{Objective}
+
+We try to propose a novel approach to find good estimators for importance sampling (especially) for scenes with many localized light sources. In a preprocess all light sources scatter out photons into the scene, similar to photon mapping (\cite{jensen2001realistic}), but no bounces are considered, as we only need direct light paths for our Next Event Estimation estimator. Further, we only consider LD paths, all LS*D paths can be disregarded. Those paths are disregarded by the first condition anyway, but we distinctly point out that refractions of any kind make a photon obsolete for our usecase. We spatially subdivide our scene with a fitting (yet to be determined) datastructure like a grid, octree or kd-tree. 
+
+We consider either storing photons or PDFs as leaf nodes. When storing photons a k-nearest neighbors search is performed. Each photon holds information about which light source it belongs to. It can be considered if storing more information like a direction or energy may be useful. Energy may be useful in a case where photons are not scattered out evenly but with some kind of PDF. Alternatively a search may be limited by spatial dimensions instead of doing a kNN-search. In a well populated scene both approaches should perform similarly. The collected photons are then used to construct a PDF based on the photon counts (and energy), which is used as an estimator. This approach requires to store many photons in a datastructure and a search operation for each shading point. An alternative may be to directly store a PDF for a region. During the preprocess the PDF is directly adjusted whenever a photon lands. Later any shading point only has to determine which cell it belongs to. The PDF is directly accessible. The datastructure should be more lightweight and access is faster, but the tradeoff to storing photons is that we give up accuracy for individual shading points and we may introduce potentially visible edges of variance on the datastructure bounds. Further considerations and ideas for storing and constructing a datastructure may arise from (stochastically) progressive photon mapping (\cite{Hachisuka2008ProgressivePM} \cite{Hachisuka2009StochasticPP}) and similar techniques.
+
+Another potential key factor may be the regulation of the distribution of the photons. A good measure has to be found to determine the number of photons that have to be scattered by any light source. This may simply be a constant. Alternatively, you could measure how much impact the last batch of photons had on the PDFs inside the datastructure. Lastly, a condition for the count of photons in each spatial region may be utilized. More ideas may arise from literature on photon mapping. Further, potentially a technique to scatter photons not uniformly but based on a PDF may be worthwhile, so that thinly populated areas of the scene may be better populated. This is subject of further research and may be out of scope of this work.
+
+We may explore how Multiple Importance Sampling (MIS) might further mature the stability of this technique. As we may have a good estimation how good our estimator will be based on the number of photons of the shading point surroundings, it might be a good idea to offload the sampling importance to a traditional estimator for thinly populated shading points.
+
+The implementation will be based on PBRT (\cite{pbrt}).
+
+
+%% ==============
+\chapter{Evaluation}
+\label{ch:Evaluation}
+%% ==============
+
+%% ==============
+\chapter{Prospect}
+\label{ch:Prospect}
+%% ==============
