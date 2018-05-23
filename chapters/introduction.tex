@@ -1,0 +1,8 @@
+%% ==============================
+\chapter{Introduction}
+\label{ch:Introduction}
+%% ==============================
+
+\section{Motivation}
+
+Modern photorealisitic rendering is commonly done by path tracers. With an ever expanding complexity of modelled scenes the presence of many light sources greatly contributes to a natural and appealing image. Path tracers utilize Next Event Estimation to deterministically connect ray intersections (shading points) with light sources. This process is a critical step in modern path tracers and takes up to 50\% of today's rendering time, partially because calculating the visibility term is costly. As sampling all lights quickly becomes too expensive for scenes with more then a few dozen lights, sampling only one or some lights per intersection is a common approach to greatly reduce the rendering time of scenes with a lot of occlusion respectively localized light influences. In an attempt to reduce the variance it is apparent that you want to sample light sources with a higher contribution with a higher probability and try to spare any unnecessary work of sampling occluded light sources. An important aspect is to stay unbiased during this process. We investigate current techniques and propose a new solution to this problem.

@@ -1,0 +1,21 @@
+PNEE especially useful for SPPM integrators, as they use direct ligthing methods anyway but throw away the contributions of photons for the first intersection. => No additional work for PNEE!
+
+Problem with visible voxelbounds (which does not occur on spatial because they don't do visibility tests!). Probably interpolate distribution linear between Voxels!?
+
+Do I have to reduce the beta of a photon based on how far it flew? I think not because pdf is already in!?
+
+Note for participating Media: PNEE can be used to drop of photons within the media and shoot them through with decreased beta.
+
+how to do proper equal time comp.? By testing params until times are roughly equal?
+
+look into papers for kd-tree knn-search acceleration. e.g.: "An FPGA Acceleration for the Kd-tree Search in Photon Mapping"
+
+Problem with kNN: Always have to build new Distribution1D, linear space and time with lights!! This may be solved by subclassing Distribution1D to some extend?!
+
+Problem with Grid: hard edges of variance on grid bounds. May be solved by interpolating Distribution1D. Needs to be subclassed so data has not to be copied to degrade to linear runtime. (Sampling from one Distribution1D takes logn steps due to binary search already)
+
+Can CDFs be linearly interpolated, without copying in linear time? Can I sample from CDFs first and then sample the sampled CDF with the first u stretched out by the pdf to get the new u?
+
+Which problemcases would you recommed to add to my testscene? Lights with different powers. Enclosed objects? Specular/Glass?
+
+I want to get a measurement that is indipendent of the pixelsamples, so techniques are compareable (they should have the same value for any pixelsample setting)

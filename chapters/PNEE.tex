@@ -1,0 +1,18 @@
+
+%% ==============
+\chapter{Photon-based Next Event Estimation}
+\label{ch:PNEE}
+%% ==============
+
+\section{Objective}
+
+We try to propose a novel approach to find good estimators for importance sampling (especially) for scenes with many localized light sources. In a preprocess all light sources scatter out photons into the scene, similar to photon mapping (\cite{jensen2001realistic}), but no bounces are considered, as we only need direct light paths for our Next Event Estimation estimator. Further, we only consider LD paths, all LS*D paths can be disregarded. Those paths are disregarded by the first condition anyway, but we distinctly point out that refractions of any kind make a photon obsolete for our usecase. We spatially subdivide our scene with a fitting (yet to be determined) datastructure like a grid, octree or kd-tree. 
+
+We consider either storing photons or PDFs as leaf nodes. When storing photons a k-nearest neighbors search is performed. Each photon holds information about which light source it belongs to. It can be considered if storing more information like a direction or energy may be useful. Energy may be useful in a case where photons are not scattered out evenly but with some kind of PDF. Alternatively a search may be limited by spatial dimensions instead of doing a kNN-search. In a well populated scene both approaches should perform similarly. The collected photons are then used to construct a PDF based on the photon counts (and energy), which is used as an estimator. This approach requires to store many photons in a datastructure and a search operation for each shading point. An alternative may be to directly store a PDF for a region. During the preprocess the PDF is directly adjusted whenever a photon lands. Later any shading point only has to determine which cell it belongs to. The PDF is directly accessible. The datastructure should be more lightweight and access is faster, but the tradeoff to storing photons is that we give up accuracy for individual shading points and we may introduce potentially visible edges of variance on the datastructure bounds. Further considerations and ideas for storing and constructing a datastructure may arise from (stochastically) progressive photon mapping (\cite{Hachisuka2008ProgressivePM} \cite{Hachisuka2009StochasticPP}) and similar techniques.
+
+Another potential key factor may be the regulation of the distribution of the photons. A good measure has to be found to determine the number of photons that have to be scattered by any light source. This may simply be a constant. Alternatively, you could measure how much impact the last batch of photons had on the PDFs inside the datastructure. Lastly, a condition for the count of photons in each spatial region may be utilized. More ideas may arise from literature on photon mapping. Further, potentially a technique to scatter photons not uniformly but based on a PDF may be worthwhile, so that thinly populated areas of the scene may be better populated. This is subject of further research and may be out of scope of this work.
+
+We may explore how Multiple Importance Sampling (MIS) might further mature the stability of this technique. As we may have a good estimation how good our estimator will be based on the number of photons of the shading point surroundings, it might be a good idea to offload the sampling importance to a traditional estimator for thinly populated shading points.
+
+The implementation will be based on PBRT (\cite{pbrt}).
+
