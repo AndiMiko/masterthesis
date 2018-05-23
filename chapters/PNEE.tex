@@ -4,7 +4,24 @@
 \label{ch:PNEE}
 %% ==============
 
-\section{Objective}
+\section{Hashed grid}
+
+\section{k-d Tree}
+
+\section{Photons or CDFs}
+
+\section{Further Optimizations}
+
+\subsection{Interpolating CDFs}
+
+\subsection{Normal culling}
+
+\subsection{Concentrated CDFs}
+
+\section{Parametrization}
+
+\subsection{Photon Count}
+
 
 We try to propose a novel approach to find good estimators for importance sampling (especially) for scenes with many localized light sources. In a preprocess all light sources scatter out photons into the scene, similar to photon mapping (\cite{jensen2001realistic}), but no bounces are considered, as we only need direct light paths for our Next Event Estimation estimator. Further, we only consider LD paths, all LS*D paths can be disregarded. Those paths are disregarded by the first condition anyway, but we distinctly point out that refractions of any kind make a photon obsolete for our usecase. We spatially subdivide our scene with a fitting (yet to be determined) datastructure like a grid, octree or kd-tree. 
 
