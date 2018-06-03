@@ -21,3 +21,13 @@ Which problemcases would you recommed to add to my testscene? Lights with differ
 I want to get a measurement that is indipendent of the pixelsamples, so techniques are compareable (they should have the same value for any pixelsample setting)
 
 Halton: what about poison disc sampling?
+
+Normal Culling: Only for solid surfaces!? - Can you cull when sampling the CDF (don't sample lights that are not in pos. hemisphere) instead of doing so when creating the CDF (storing photon directions). Probably not, as you would have to discard sampled lights and you wouldn't know the exact sampling probablity then, introduces bias.
+
+Can I divide only by the given subpdf without adding up the pdfs for all segments of that samplenum?
+
+We use k-means clustering because it only works for hyper-ellipsoids (or hyper-spheres), as our result are CDFs at exactly the centroid, we don't want a complex shape potentially created by AHC to be a cluster, summing this shape into a CDF at the centroid would lead to unexpected results.
+
+Consider ML algorithms: k-means does a good job and especially has okish runtime O(kndl?), but maybe we can improve, cause we have some kind of labeled data? AHC is not practical, dendogram may be useful, but runtime of O(n2) doesn't go well with millions of photons. Transductive SVM as semisupervised algorithm may be interessting considering we have labeled data? 
+
+We are thinking about different kinds of interpolation. All methods needing a triangulation are potentially costly due to quadratic runtime (but only on centroids, which are limited!). Using a global interpolation (shepard/rbf) may be good, but we have to limit the number of influencing cdfs without visible cliffs.
