@@ -31,3 +31,15 @@ We use k-means clustering because it only works for hyper-ellipsoids (or hyper-s
 Consider ML algorithms: k-means does a good job and especially has okish runtime O(kndl?), but maybe we can improve, cause we have some kind of labeled data? AHC is not practical, dendogram may be useful, but runtime of O(n2) doesn't go well with millions of photons. Transductive SVM as semisupervised algorithm may be interessting considering we have labeled data? 
 
 We are thinking about different kinds of interpolation. All methods needing a triangulation are potentially costly due to quadratic runtime (but only on centroids, which are limited!). Using a global interpolation (shepard/rbf) may be good, but we have to limit the number of influencing cdfs without visible cliffs.
+
+Shoot photons, perform k-means to find cdf centroids, then shoot many more photons adding weights into the cdfs. This may reduce the complexitiy of the cluster analysis? (but adding new photons is costlier)
+
+how meaningful is a voxel? count photons arriving and based on that number divided by photon count set mincontributionscale per voxel. (this would degenerate to uniform sampling where not much light is!?)
+
+
+
+Writing:
+
+how long can I refer to an introduced variable e.g. k?
+
+4.1 Form of storage, empty section ok?

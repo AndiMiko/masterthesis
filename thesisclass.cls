@@ -56,7 +56,8 @@
 						colorlinks=false,						
 						linkbordercolor={0 0.61 0.50},   
 						citebordercolor={0 0.61 0.50}]{hyperref}  %{0.57 0.74 0.57}
-						
+
+%\usepackage[style=apa]{biblatex}						
 \usepackage[fixlanguage]{babelbib}	% sets german style for literature entries
 \selectbiblanguage{english}			% for \bibliographystyle{babalpha}
 %% --- End of Packages ---
@@ -268,5 +269,13 @@
    \hfill{\vbox{\hrule{\hbox{\small(\myname)}}}}
    \thispagestyle{empty}
  }
+
+
+\newcommand{\til}{{\raise.17ex\hbox{$\scriptstyle\mathtt{\sim}$}}}
+
+\usepackage{mathtools}
+\usepackage{pdfcomment}
+
+\usetikzlibrary{decorations.pathreplacing,angles, quotes, calligraphy}
 
 %% **** END OF CLASS ****
