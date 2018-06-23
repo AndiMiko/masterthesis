@@ -34,7 +34,11 @@ We are thinking about different kinds of interpolation. All methods needing a tr
 
 Shoot photons, perform k-means to find cdf centroids, then shoot many more photons adding weights into the cdfs. This may reduce the complexitiy of the cluster analysis? (but adding new photons is costlier)
 
-how meaningful is a voxel? count photons arriving and based on that number divided by photon count set mincontributionscale per voxel. (this would degenerate to uniform sampling where not much light is!?)
+how meaningful is a voxel? count photons arriving and based on that number divided by photon count set mincontributionscale per voxel. (this would degenerate to uniform sampling where not much light is!?) --> bad if most photons are somewhere else, but this part is important nonetheless
+
+read
+Approximate K-Means++ in Sublinear Time
+http://www.mmds.org/
 
 
 

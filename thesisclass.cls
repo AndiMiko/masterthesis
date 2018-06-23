@@ -275,7 +275,18 @@
 
 \usepackage{mathtools}
 \usepackage{pdfcomment}
-
 \usetikzlibrary{decorations.pathreplacing,angles, quotes, calligraphy}
 
+
+\newcommand{\bigO}{\mathcal{O}}
+
+\usepackage{lineno}
+\makeatletter
+\def\makeLineNumberLeft{%
+  \linenumberfont\llap{\hb@xt@\linenumberwidth{\LineNumber\hss}\hskip\linenumbersep}% left line number
+  \hskip\columnwidth% skip over column of text
+  \rlap{\hskip\linenumbersep\hb@xt@\linenumberwidth{\hss\LineNumber}}\hss}% right line number
+\leftlinenumbers% Re-issue [left] option
+\makeatother
+\linenumbers
 %% **** END OF CLASS ****
