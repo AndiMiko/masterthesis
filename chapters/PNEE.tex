@@ -38,52 +38,7 @@ Another possibility is to directly store cumulative distribution functions durin
 \label{sec:sparse}
 \begin{figure}[htb] 
 	\centering
-	\begin{tikzpicture}[scale=7, cdf/.style ={thick}]
-
-        
-        %zoom lines
-        \draw (0,0) -- (0,-0.2);
-        \draw (1,0) -- (0.8,-0.2);
-        
-
-        %cdfs, lines and filling
-        \draw[thick, fill=green!10] (0,0) rectangle (0.25, 0.1) node[pos=.5] {25\%};
-        \draw[thick, fill=red!10] (0.25, 0) rectangle (0.5, 0.1) node[pos=.5] {25\%};
-        \draw[thick, fill=blue!10] (0.5, 0) rectangle (1, 0.1) node[pos=.5] {50\%};
-        
-        \draw[thick, fill=green!10] (0, -0.3) rectangle (0.2, -0.2) node[pos=.5] {20\%};
-        \draw[thick, fill=red!10] (0.2, -0.3) rectangle (0.4, -0.2) node[pos=.5] {20\%};
-        \draw[thick, fill=blue!10] (0.4, -0.3) rectangle (0.8, -0.2) node[pos=.5] {40\%};
-        
-        \draw[thick, fill=black!10] (0.8, -0.3) rectangle (1, -0.2);
-        
-        \fill[fill=green!10] (0.84, -0.3) rectangle (0.86, -0.2);
-        \fill[fill=red!10] (0.88, -0.3) rectangle (0.9, -0.2);
-        \fill[fill=blue!20] (0.98, -0.3) rectangle (1, -0.2);
-        
-        \foreach\x in {0.82,0.84,...,0.98}
-            \draw (\x,-0.2) -- (\x,-0.3);
-            
-        \draw[cdf] (0,0) rectangle node[left=4cm] {Inner CDF} (1,0.1);
-        \draw[cdf] (0,-0.3) rectangle node[left=4cm] {Sparse CDF} (1,-0.2);
-        
-        % b range indicators
-        \draw[thick] (0, -0.16) -- node[above] {$1-b = 0.8$} (0.8, -0.16) ;
-        \draw[thick] (0, -0.17) -- (0, -0.15);
-        
-        \draw[thick] (0.8, -0.16) -- (1, -0.16) node[above] {$b = 0.2$} ;
-        \draw[thick] (0.8, -0.17) -- (0.8, -0.15);
-        \draw[thick] (1, -0.17) -- (1, -0.15);
-        
-        % braces
-        \draw[line width=1.25pt, decoration={calligraphic brace,amplitude=7pt,mirror,raise=6pt},decorate]
-                        (0,-0.3) -- node[below=12pt] {$k = 3$} (0.8,-0.3);
-        \draw[line width=1.25pt, decoration={calligraphic brace,amplitude=7pt,mirror,raise=6pt},decorate]
-                        (0.8,-0.3) -- node[below=12pt] {$n$} (1,-0.3);
-        \draw[line width=1.25pt, decoration={calligraphic brace,amplitude=7pt,mirror,raise=26pt},decorate]
-                        (0,-0.3) -- node[below=32pt] {$n$ distinct samples} (1,-0.3);
-
-    \end{tikzpicture}
+    \input{figures/sparseCdf.tex}
     \caption{A sparse CDF either samples from the uniform part with probability $b$ or from the inner CDF with probability $1-b$. $k$ are the number of samples that have a non-zero probability in the non-uniform part. All $k$ samples are repeated within the uniform part to facilitate calculations of $p_{\text{sparse}}$ (equation \ref{eq:psparse}). The samples in sparse CDF are not in the correct order, as a result two additional hashmaps are needed.} 
     \label{fig:sparseCDF}
 \end{figure}
@@ -104,64 +59,7 @@ Construction is done in $\bigO(k)$ space and time, sampling in $\bigO(\log{k})$.
 \label{sec:intcdf}
 \begin{figure}[htb] 
 	\centering
-	\begin{tikzpicture}[scale=4.5, cdf/.style ={thick}]
-        \small
-        %zoom lines
-        \draw (-1.1,0) -- (0,-0.4);
-        \draw (-0.1,0) -- (0.4,-0.4);
-        \draw (0,0) -- (0.4,-0.4);
-        \draw (1,0) -- (0.9,-0.4);
-        \draw (1.1,0) -- (0.9,-0.4);
-        \draw (2.1,0) -- (1,-0.4);
-        
-        \draw[cdf] (-1.1,0) rectangle (-0.1,0.1);
-        \draw[cdf] (0,0) rectangle (1,0.1);
-        \draw[cdf] (1.1,0) rectangle (2.1,0.1);
-        \draw[cdf] (0,-0.5) rectangle (0.4,-0.4);
-        \draw[cdf] (0.4,-0.5) rectangle (0.9,-0.4);
-        \draw[cdf] (0.9,-0.5) rectangle (1,-0.4);
-        
-        %cdfs, lines and filling
-        \draw[thick, fill=green!10] (-1.1,0) rectangle (-0.6, 0.1) node[pos=.5] {50\%};
-        \draw[thick, fill=red!10] (-0.6, 0) rectangle (-0.35, 0.1) node[pos=.5] {25\%};
-        \draw[thick, fill=blue!10] (-0.35, 0) rectangle (-0.1, 0.1) node[pos=.5] {25\%};
-        
-        \draw[thick, fill=green!10] (0,0) rectangle (0.6, 0.1) node[pos=.5] {60\%};
-        \draw[thick, fill=red!10] (0.6, 0) rectangle (0.9, 0.1) node[pos=.5] {30\%};
-        \draw[thick, fill=blue!10] (0.9, 0) rectangle (1, 0.1);
-        
-        \draw[thick, fill=green!10] (1.1,0) rectangle (1.35, 0.1) node[pos=.5] {25\%};
-        \draw[thick, fill=red!10] (1.35, 0) rectangle (1.4, 0.1);
-        \draw[thick, fill=blue!10] (1.4, 0) rectangle (2.1, 0.1) node[pos=.5] {70\%};
-        
-        \draw[fill=green!10] (0,-0.5) rectangle (0.2,-0.4) node[pos=.5] {20\%};
-        \draw[fill=red!10] (0.2,-0.5) rectangle (0.3,-0.4);
-        \draw[fill=blue!10] (0.3,-0.5) rectangle (0.4,-0.4);
-
-        \draw[fill=green!10] (0.4,-0.5) rectangle (0.7,-0.4) node[pos=.5] {30\%};
-        \draw[fill=red!10] (0.7,-0.5) rectangle (0.85,-0.4);
-        \draw[fill=blue!10] (0.85,-0.5) rectangle (0.9,-0.4);
-        
-        \draw[fill=green!10] (0.9,-0.5) rectangle (0.925,-0.4);
-        \draw[fill=red!10] (0.925,-0.5) rectangle (0.93,-0.4);
-        \draw[fill=blue!10] (0.93,-0.5) rectangle (1,-0.4);
-        
-        \draw[thick] (0.55,-0.39) node[above] {$\xi = 0.55$} rectangle (0.55,-0.41);
-        
-        \draw[thick] (0.3, 0.11) node[above] {$\xi = 0.3$} rectangle (0.3,0.09);
-        
-        \node at (0.5, -0.75) {$p_{\text{interpolated}}(1) = \overbracket{(0.5 * 0.4)} + \overbracket{(0.6 * 0.5)} + \overbracket{(0.25 * 0.1)} = 52.5\%$};
-        
-        \draw[->] (0.1,-0.5) -- (0.196,-0.65);
-        \draw[->] (0.55,-0.5) -- (0.615,-0.65);
-        \draw[->] (0.9125,-0.5) -- (1.05,-0.65);
-        
-        % pi range indicators
-        \path (-0.2, -0.25) node[above] {$c_1 = 0.4$};
-        \path (0.55, -0.25) node[above] {$c_2 = 0.5$};
-        \path (1.25, -0.25) node[above] {$c_3 = 0.1$};
-        
-    \end{tikzpicture}
+    \input{figures/interpolatedCdf.tex}
     \caption{Three CDFs should be interpolated with corresponding weights $c_i$. Randomnumber $\xi$ is $0.55$. The second CDF is chosen, $\xi$ is cut and normalized to $0.3$. Sample 1 (green) is chosen. $p_{\text{interpolated}}$ is calculated according to equation \ref{eq:pinter}.} 
     \label{fig:interpolatedCDF}
 \end{figure}
