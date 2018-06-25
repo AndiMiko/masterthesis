@@ -34,20 +34,6 @@
 \newcommand{\timeend}{XX. Monat 20XX}
 \newcommand{\submissiontime}{DD. MM. 20XX}
 
-
-%% ---------------------------------
-%% | ToDo Marker - only for draft! |
-%% ---------------------------------
-% Remove this section for final version!
-\setlength{\marginparwidth}{20mm}
-
-\newcommand{\margtodo}
-{\marginpar{\textbf{\textcolor{red}{ToDo}}}{}}
-
-\newcommand{\todo}[1]
-{{\textbf{\textcolor{red}{(\margtodo{}#1)}}}{}}
-
-
 %% --------------------------------
 %% | Old Marker - only for draft! |
 %% --------------------------------
@@ -55,7 +41,6 @@
 \newenvironment{deprecated}
 {\begin{color}{gray}}
 {\end{color}}
-
 
 %% --------------------------------
 %% | Settings for word separation |
@@ -107,6 +92,7 @@ content
 %% -------------------
 %% |   Directories   |
 %% -------------------
+\listoftodos[Notes]
 \tableofcontents
 \blankpage
 
