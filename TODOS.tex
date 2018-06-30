@@ -36,6 +36,12 @@ Shoot photons, perform k-means to find cdf centroids, then shoot many more photo
 
 how meaningful is a voxel? count photons arriving and based on that number divided by photon count set mincontributionscale per voxel. (this would degenerate to uniform sampling where not much light is!?) --> bad if most photons are somewhere else, but this part is important nonetheless
 
+Precompute gradient (Ableitung der 3D Funktion) in the grid of cdfs, with this make a even smoother interpolation with Hermite Splines. Bicubic interpolation may not be feasable due to 64 cdfs needed ...
+
+Radial Basis Functions are not possible? We would need to precompute weights for a lightnum-dimensional function over the whole scene!?
+
+What do you think of dblp?
+
 read
 Approximate K-Means++ in Sublinear Time
 http://www.mmds.org/
