@@ -301,4 +301,10 @@
 \newcommandx{\thiswillnotshow}[2][1=]{\todo[disable,#1]{#2}}
 
 \setlength{\marginparwidth}{20mm}
+
+\usepackage{booktabs}
+\newcommand{\ra}[1]{\renewcommand{\arraystretch}{#1}}
+
+\usepackage{float}
+
 %% **** END OF CLASS ****

@@ -14,6 +14,38 @@ Note that when the photon count goes towards infinity and the intersection searc
 
 \section{Mix and Match}
 
+Throughout this work we explored several techniques that trade off time, memory and image quality (visible artifacts). From a meta-perspective we can divide our technique into several subprocesses:
+
+\begin{itemize}
+    \item shoot photons (section~\ref{ch:shootph})
+    \item store those photons in some form (section~\ref{ch:formofstorage})
+    \item add this information into a fitting acceleration datastructure (section~\ref{ch:AccelDat})
+    \item and finally, from within the path tracer, retrieve this information and potentially interpolate it to construct meaningful estimators (section \ref{ch:interpolation})
+\end{itemize}
+
+For each subprocess we present several ideas, where mostly any permutation of those ideas could be utilized. Unsurprisingly, there are several natural fits, which we describe in more detail, have implemented and evaluate against each other and known techniques in section~\ref{ch:Evaluation}. We refer to the implemented techniques as \textit{cdfgrid}, \textit{photontree} and \textit{cdftree}. All of which have specific peculiarities and parameters which are introduced during the course of this work. Table \ref{tb:techniques} gives an overview of subtechniques and colors indicate which of those are implemented with the respective technique.
+\unsure{good table and styling?}
+
+\begin{center}
+
+
+\newcommand{\tdot}[1]{ \tikz\draw[#1,fill=#1] (0,0) circle (.5ex); }
+\ra{1.3}
+\begin{tabular}{@{}llll@{}}\toprule
+shooting photons & form of storage & acceleration datastructure & interpolation \\ \midrule
+
+uniform \tdot{yellow}\tdot{blue}\tdot{green}        & photons \tdot{blue}               & hashed grid \tdot{yellow}                 & none \tdot{yellow}\tdot{blue}\tdot{green}\\
+powerbased \tdot{yellow}\tdot{blue}\tdot{green}     & lightcuts                         & k-d tree \tdot{blue}\tdot{green}          & trilinear \tdot{yellow} \\
+other strategies                                    & CDFs \tdot{yellow}\tdot{green}    &                                           & shepard \tdot{blue}\tdot{green}\\
+\bottomrule
+\multicolumn{4}{c}{cdfgrid \tdot{yellow} \qquad photontree \tdot{blue} \qquad cdftree \tdot{green}} 
+\end{tabular}
+%\captionof{table}{Various subtechniques introduced throughout this work. Colors indicate which subtechnique was implemented with the respective technique. }
+\label{tb:techniques}
+\end{center}
+
+
+
 
 \section{Shooting photons}
 \label{ch:shootph}
