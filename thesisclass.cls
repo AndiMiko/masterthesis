@@ -34,7 +34,7 @@
 \usepackage[pdftex]{graphicx}
 \usepackage{vmargin}          % Adjust margins in a simple way
 \usepackage{fancyhdr}         % Define simple headings
-\usepackage{subfigure}
+%\usepackage{subfigure}
 \usepackage{url}
 \usepackage[absolute,overlay]{textpos}
 \usepackage{tikz}
@@ -288,7 +288,7 @@
   \rlap{\hskip\linenumbersep\hb@xt@\linenumberwidth{\hss\LineNumber}}\hss}% right line number
 \leftlinenumbers% Re-issue [left] option
 \makeatother
-%\linenumbers
+\linenumbers
 
 \usepackage{xargs}                      % Use more than one optional parameter in a new commands
 %\usepackage[pdftex,dvipsnames]{xcolor}  % Coloured text etc.
@@ -305,6 +305,208 @@
 \usepackage{booktabs}
 \newcommand{\ra}[1]{\renewcommand{\arraystretch}{#1}}
 
-\usepackage{float}
+
+\usepackage{subcaption}
+\usetikzlibrary[spy,calc]
+
+
+\newif\ifblackandwhitecycle
+\gdef\patternnumber{0}
+
+\pgfkeys{/tikz/.cd,
+    zoombox paths/.style={
+        draw=orange,
+        very thick
+    },
+    black and white/.is choice,
+    black and white/.default=static,
+    black and white/static/.style={ 
+        draw=white,   
+        zoombox paths/.append style={
+            draw=white,
+            postaction={
+                draw=black,
+                loosely dashed
+            }
+        }
+    },
+    black and white/static/.code={
+        \gdef\patternnumber{1}
+    },
+    black and white/cycle/.code={
+        \blackandwhitecycletrue
+        \gdef\patternnumber{1}
+    },
+    black and white pattern/.is choice,
+    black and white pattern/0/.style={},
+    black and white pattern/1/.style={    
+            draw=white,
+            postaction={
+                draw=black,
+                dash pattern=on 2pt off 2pt
+            }
+    },
+    black and white pattern/2/.style={    
+            draw=white,
+            postaction={
+                draw=black,
+                dash pattern=on 4pt off 4pt
+            }
+    },
+    black and white pattern/3/.style={    
+            draw=white,
+            postaction={
+                draw=black,
+                dash pattern=on 4pt off 4pt on 1pt off 4pt
+            }
+    },
+    black and white pattern/4/.style={    
+            draw=white,
+            postaction={
+                draw=black,
+                dash pattern=on 4pt off 2pt on 2 pt off 2pt on 2 pt off 2pt
+            }
+    },
+    zoomboxarray inner gap/.initial=5pt,
+    zoomboxarray columns/.initial=2,
+    zoomboxarray rows/.initial=2,
+    subfigurename/.initial={},
+    figurename/.initial={zoombox},
+    zoomboxarray/.style={
+        execute at begin picture={
+            \begin{scope}[
+                spy using outlines={%
+                    zoombox paths,
+                    width=\imagewidth / \pgfkeysvalueof{/tikz/zoomboxarray columns} - (\pgfkeysvalueof{/tikz/zoomboxarray columns} - 1) / \pgfkeysvalueof{/tikz/zoomboxarray columns} * \pgfkeysvalueof{/tikz/zoomboxarray inner gap} -\pgflinewidth,
+                    height=\imageheight / \pgfkeysvalueof{/tikz/zoomboxarray rows} - (\pgfkeysvalueof{/tikz/zoomboxarray rows} - 1) / \pgfkeysvalueof{/tikz/zoomboxarray rows} * \pgfkeysvalueof{/tikz/zoomboxarray inner gap}-\pgflinewidth,
+                    magnification=3,
+                    every spy on node/.style={
+                        zoombox paths
+                    },
+                    every spy in node/.style={
+                        zoombox paths
+                    }
+                }
+            ]
+        },
+        execute at end picture={
+            \end{scope}
+            \node at (image.north) [anchor=north,inner sep=0pt] {\subcaptionbox{\label{\pgfkeysvalueof{/tikz/figurename}-image}}{\phantomimage}};
+            \node at (zoomboxes container.north) [anchor=north,inner sep=0pt] {\subcaptionbox{\label{\pgfkeysvalueof{/tikz/figurename}-zoom}}{\phantomimage}};
+     \gdef\patternnumber{0}
+        },
+        spymargin/.initial=0.5em,
+        zoomboxes xshift/.initial=1,
+        zoomboxes right/.code=\pgfkeys{/tikz/zoomboxes xshift=1},
+        zoomboxes left/.code=\pgfkeys{/tikz/zoomboxes xshift=-1},
+        zoomboxes yshift/.initial=0,
+        zoomboxes above/.code={
+            \pgfkeys{/tikz/zoomboxes yshift=1},
+            \pgfkeys{/tikz/zoomboxes xshift=0}
+        },
+        zoomboxes below/.code={
+            \pgfkeys{/tikz/zoomboxes yshift=-1},
+            \pgfkeys{/tikz/zoomboxes xshift=0}
+        },
+        caption margin/.initial=4ex,
+    },
+    adjust caption spacing/.code={},
+    image container/.style={
+        inner sep=0pt,
+        at=(image.north),
+        anchor=north,
+        adjust caption spacing
+    },
+    zoomboxes container/.style={
+        inner sep=0pt,
+        at=(image.north),
+        anchor=north,
+        name=zoomboxes container,
+        xshift=\pgfkeysvalueof{/tikz/zoomboxes xshift}*(\imagewidth+\pgfkeysvalueof{/tikz/spymargin}),
+        yshift=\pgfkeysvalueof{/tikz/zoomboxes yshift}*(\imageheight+\pgfkeysvalueof{/tikz/spymargin}+\pgfkeysvalueof{/tikz/caption margin}),
+        adjust caption spacing
+    },
+    calculate dimensions/.code={
+        \pgfpointdiff{\pgfpointanchor{image}{south west} }{\pgfpointanchor{image}{north east} }
+        \pgfgetlastxy{\imagewidth}{\imageheight}
+        \global\let\imagewidth=\imagewidth
+        \global\let\imageheight=\imageheight
+        \gdef\columncount{1}
+        \gdef\rowcount{1}
+        \gdef\zoomboxcount{1}
+    },
+    image node/.style={
+        inner sep=0pt,
+        name=image,
+        anchor=south west,
+        append after command={
+            [calculate dimensions]
+            node [image container,subfigurename=\pgfkeysvalueof{/tikz/figurename}-image] {\phantomimage}
+            node [zoomboxes container,subfigurename=\pgfkeysvalueof{/tikz/figurename}-zoom] {\phantomimage}
+        }
+    },
+    color code/.style={
+        zoombox paths/.append style={draw=#1}
+    },
+    connect zoomboxes/.style={
+    spy connection path={\draw[draw=none,zoombox paths] (tikzspyonnode) -- (tikzspyinnode);}
+    },
+    help grid code/.code={
+        \begin{scope}[
+                x={(image.south east)},
+                y={(image.north west)},
+                font=\footnotesize,
+                help lines,
+                overlay
+            ]
+            \foreach \x in {0,1,...,9} { 
+                \draw(\x/10,0) -- (\x/10,1);
+                \node [anchor=north] at (\x/10,0) {0.\x};
+            }
+            \foreach \y in {0,1,...,9} {
+                \draw(0,\y/10) -- (1,\y/10);                        \node [anchor=east] at (0,\y/10) {0.\y};
+            }
+        \end{scope}    
+    },
+    help grid/.style={
+        append after command={
+            [help grid code]
+        }
+    },
+}
+
+\newcommand\phantomimage{%
+    \phantom{%
+        \rule{\imagewidth}{\imageheight}%
+    }%
+}
+\newcommand\zoombox[2][]{
+    \begin{scope}[zoombox paths]
+        \pgfmathsetmacro\xpos{
+            (\columncount-1)*(\imagewidth / \pgfkeysvalueof{/tikz/zoomboxarray columns} + \pgfkeysvalueof{/tikz/zoomboxarray inner gap} / \pgfkeysvalueof{/tikz/zoomboxarray columns} ) + \pgflinewidth
+        }
+        \pgfmathsetmacro\ypos{
+            (\rowcount-1)*( \imageheight / \pgfkeysvalueof{/tikz/zoomboxarray rows} + \pgfkeysvalueof{/tikz/zoomboxarray inner gap} / \pgfkeysvalueof{/tikz/zoomboxarray rows} ) + 0.5*\pgflinewidth
+        }
+        \edef\dospy{\noexpand\spy [
+            #1,
+            zoombox paths/.append style={
+                black and white pattern=\patternnumber
+            },
+            every spy on node/.append style={#1},
+            x=\imagewidth,
+            y=\imageheight
+        ] on (#2) in node [anchor=north west] at ($(zoomboxes container.north west)+(\xpos pt,-\ypos pt)$);}
+        \dospy
+        \pgfmathtruncatemacro\pgfmathresult{ifthenelse(\columncount==\pgfkeysvalueof{/tikz/zoomboxarray columns},\rowcount+1,\rowcount)}
+        \global\let\rowcount=\pgfmathresult
+        \pgfmathtruncatemacro\pgfmathresult{ifthenelse(\columncount==\pgfkeysvalueof{/tikz/zoomboxarray columns},1,\columncount+1)}
+        \global\let\columncount=\pgfmathresult
+        \ifblackandwhitecycle
+            \pgfmathtruncatemacro{\newpatternnumber}{\patternnumber+1}
+            \global\edef\patternnumber{\newpatternnumber}
+        \fi
+    \end{scope}
+}
 
 %% **** END OF CLASS ****
