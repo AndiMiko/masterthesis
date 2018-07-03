@@ -10,10 +10,13 @@ In a preprocess all light sources scatter out photons into the scene, similar to
 
 Note that when the photon count goes towards infinity and the intersection search radius goes towards zero the estimator becomes the direct lighting term we are trying to find, making the Monte Carlo integration obsolete. As we are bound by time and memory, the key challenge is to find a good approximation thereof in minimal time. We found that shooting, processing and storing photons in the preprocess is not as tightly bound, but the lookup thereof in the integrator is very timecritical as it runs once for each intersection in the pathtracer. In the following sections we discuss various datastructures and storing methods we explored throughout this work.
 
-% TODO introduce mix and match here already? Or at least point out the structure
+
+
+\section{Mix and Match}
+
 
 \section{Shooting photons}
-
+\label{ch:shootph}
 The first step in the preprocess is to scatter out photons. We rely on the same theoretical basis as photon mapping (section \ref{sec:PM}) but without producing any kind of bias as long as our CDFs always inherit every light source. We generate photons at the scenes light sources and intersect them with our scene geometry. We sample the light source $x$ and a point s and direction $\omega$ on that light source with respect to a probability distribution. This bears opportunity to guide the generation of photons to maximize the photon density in the important parts of the scene. Let $L(s,\omega)$ be the radiance \unsure{radiance?} at point s in direction $\omega$, $p(x)$ the probability to sample light source $x$ and $p(\text{s}, \omega)$ the probability to sample the ray, the energy $\beta$ of this photon is calculated as follows.
 
 \begin{equation}\label{eq:beta}
@@ -23,6 +26,7 @@ The first step in the preprocess is to scatter out photons. We rely on the same 
 The basic approach is to use uniform CDFs to sample both $p(x)$ and $p(\text{s}, \omega)$. We found that results can be greatly enhanced for typical (but not all) scenes by sampling $x$ based on the light power. We elaborate differences in section \ref{ch:}\todo{input section}. In the future it might be of value to migrate sampling strategies presented for photon mapping to PNEE, see \cite{DBLP:conf/rt/SuykensW00}\todo{add more}. After we found the first intersection of the photon we check the surface BSDF, if it is fully specular, the photon can be discarded, if it has a diffuse part we store the photon, or at least its origin and $\beta$ in a data structure which we discuss in the next sections.
 
 \section{Form of storage}
+\label{ch:formofstorage}
 
 \subsection{Photons}
 
@@ -79,10 +83,8 @@ We receive a list of CDFs to interpolate and corresponding weights. We loop thro
 
 The time complexity for this calculation is $\bigO(d)$, resulting in overall complexity $\bigO(\log{d} + \log{n} + d) = \bigO(d + \log{n})$. The whole process is illustrated in figure \ref{fig:interpolatedCDF}. Note that with our construction all base CDFs are required to have the same number of samples $n$ in the exact same order. This restriction might be lifted with additional maps, similar to sparse CDFs, but we have no need for it, as all our used CDFs have the same $n$ lights, thus we spare the overhead.
 
-
-
-
 \section{Acceleration datastructure}
+\label{ch:AccelDat}
 
 After choosing what we store we are choosing how we store and access it from within our integrator. A critical part of finding our estimator is to access the data we previously stored. It is important to keep the probable distribution of photons in mind. Usually large parts of the scene won't have any photons and then there will be photon clusters, typically distributed on 3D-planes. Further, a typical problemcase for the choice of acceleration datastructures is called "teapot in a stadium" \todo{illustration?}. It describes the potentially vastly varying level of detail in a scene. The "teapot" is a small, highly detailed object in the "stadium" which is big, simple and mostly empty. This bears a typical trade off between adaptive datastructures like octrees or k-d trees, which handle varying LOD quite well, but generally have slower access times and static datastructures like a hashed grid, which has fast constant access times, but can't adapt to LOD at all. For our renderer often times not even the big $\bigO$ runtime is critical, but the constant overhead can be problematic, too. The best choice is often scene dependent, nonetheless, we are trying to find a good middleground that solves typical problem cases in photorealistic scenes. The form of storage does also impact the effectiveness of the acceleration datastructure, we present natural fits in the following chapters.
 
@@ -112,18 +114,25 @@ We have done extensive tests with k-means clustering, but at first highly undere
 
 We don't bother very much for the exact cluster affinity of single photons, thus a good approximation of spatial subdivision should be enough. This is often not the case for machine learning purposes. Also the dimensionality is often higher. In fact, k-d trees offer exactly this spatial subdivision based on surface area heuristics in 3D but fail for higher dimensions. With a construction time of $\bigO(n \log n)$ they fit our scalability needs and we can configure how many photons our leafs should maximally have. There are still peculiarities like single photon leafs that we have to handle, we discuss this in section \ref{ch:ev:cdftree}. After the k-d tree is constructed we iterate each leaf, calculate the centroid of each leaf based on the contained photons and construct a CDF to place on that centroid. After all CDFs are constructed we construct a new k-d tree over all CDFs. This k-d tree is then later used for lookups from within the integrator in $\bigO(\log k)$.
 
-Comparing to storing photons we reduced our lookup cost from $\bigO(\log n)$ to $\bigO(\log k)$ and the number of lookups can be significantly lower, as we only care about a smooth interpolation between the CDFs and don't have to worry about missing out on certain light sources. Additionally no hashes have to be computed, instead of a sparse CDF we are constructing a interpolated CDF, which has less overhead attached to it. Nonetheless, we are giving up precision and we are dependent on the quality of our preprocess and interpolation. We discuss interpolating unstructured data points in section \ref{ch:unstructured}.
+Comparing to storing photons we reduced our lookup cost from $\bigO(\log n)$ to $\bigO(\log k)$ and the number of lookups can be significantly lower, as we only care about a smooth interpolation between the CDFs and don't have to worry about missing out on certain light sources. Additionally no hashes have to be computed, instead of a sparse CDF we are constructing an interpolated CDF, which has less overhead attached to it. Nonetheless, we are giving up precision and we are dependent on the quality of our preprocess and interpolation. We discuss interpolating unstructured data points in section \ref{ch:unstructured}.
 
 
 \section{Interpolation}
+\label{ch:interpolation}
 
-\subsection{Grid - Trilinear interpolation}
+In theory, a completely converged picture would always resemble the real light transport in the scene, one would not have to care about variance edges within the scene (as there is none). In practice, we are trying to find good estimators for our importance sampling to reduce processing time. This might work well for certain parts of the scene, but also has a chance to fail for other parts. If the estimator is bad, we sample the important part so rarely (see figure \ref{fig:importancesample}), that this parts might never, or at least extremely slowly, converge, thus sharp variance edges may occur. When the estimator is good for most parts and only bad a few times, this might not be captured by the mean squared error to the reference picture, but human perception is quite sensitive to this variance edges, see figure \ref{fig:varianceCornorEdge}. As Variance is the margin between estimator and estimated function, variance edges can occur for two reasons, either the estimator does change rapidly, or the scene does change rapidly. Changes of the estimator feel much more unnatural, as we see no apparent reason for those image artifacts, an actual change in the scene (like a hole you are looking through) might not be judged that harshly by a human observer, as the context does change - and with it, the variance\unsure{good?bad?}. With our techniques we always have some spatially precomputed data packets which constitute a discrete representation of our estimators. When estimators are chosen naively this discrete representation shows with unwanted variance edges. We need interpolation to turn this discrete data packets into a continuous and smooth function of estimators. We can't avoid variance in estimator quality, but we try to make it smooth and unnoticeable.
+
+With our techniques we either collect photons or CDFs, for both methods interpolation is needed, for slightly different reasons. For photons, it does not make sense to only sample one photon, this would imply this shading point would always sample exactly this one light source\footnote{Not exactly, the uniform part of the sparse CDF always contains all light samples with a small probability. Otherwise we would introduce bias.}. We have to collect a bigger set of photons to estimate a good probability distribution of light sources in this area. As this sets gets bigger interpolation gets less important, because for adjacent pixels only a small subset of collected photons change, thus the probabilities and resulting variance changes insignificantly. As we lower the subset to speedup the process, interpolation gets much more important, as individual photons have a higher influence.
+
+With CDFs one might expect considering only the closest CDF might be enough, as a CDF already contains a probability representation for all lights. This might be true for cases when occlusion is not taking into account when the CDFs are calculated. As PBRTs implementation (section \ref{ch:prev:pbrt}) does demonstrate, CDFs are only calculated by distances and angles, due to their spatial correlation adjacent CDFs are similar to each other, thus variance edges are often not noticeable, but still occur, as figure \ref{fig:spatialedge} shows. In that sense, their estimator function is still discrete, but adjacent estimators are by design similar to each other most of the time. This is not true anymore when occlusion is factored in. A single object between two adjacent CDFs could completely change their registered photons. Sampling only the nearest neighbour does result in a very noticeable voronoi diagram, see figure \ref{fig:voronoi}. This can only be solved by interpolation, which generally increases overall variance, but removes those unwanted edges.
+
+The choice which interpolation method can be used highly depends on the fact whether the structure of the data points is known and which structure it has. Interpolating with structured data, especially with a uniform grid, is comparatively fast and easy. We discuss our approach in the following section. For unstructured data, either photons or CDFs, interpolation is harder to achieve without creating artifacts. We considered precomputing a 3D-Delaunay triangulation and applying local interpolation methods, which only makes sense for CDFs, but algorithms like bowyer-watson wouldn't scale well enough for our needs. Additionally, our results indicated, that interpolating within a tetrahedral with only four CDFs, wouldn't mask outlier CDFs well enough. We instead discuss modified global interpolation methods in section \ref{ch:unstructured}. Nonetheless, we acknowledge that there are more interesting interpolation methods or kernels that might be worth to explore.
+
+\subsection{Structured data - Trilinear interpolation}
 \label{ch:trilinear}
 
-\subsection{Unstructured data}
+\subsection{Unstructured data - Shepard interpolation}
 \label{ch:unstructured}
-
-\section{Mix and Match}
 
 \section{Further Optimizations}
 
