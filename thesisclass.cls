@@ -309,7 +309,12 @@
 \usepackage{subcaption}
 \usetikzlibrary[spy,calc]
 
+\usepackage{pgf}
+\usepackage{acronym}
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SPECIAL ZOOM COMMANDS FOR TIKZ SPY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newif\ifblackandwhitecycle
 \gdef\patternnumber{0}
 
