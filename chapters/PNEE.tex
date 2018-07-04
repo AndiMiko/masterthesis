@@ -142,6 +142,13 @@ To reduce the mostly constant factors of constructing CDFs just mentioned, we tr
 
 Our first intuition was to make a cluster analysis on the photons to find cluster centroids and cluster affinity for every photon. The centroids can then be used as CDFs where every photon from this cluster accumulate its $\beta$ into the CDF. We researched several machine learning techniques for clustering. Hierarchical clustering algorithms like AHC produce useful dendrogram which could be interesting to explore, but AHC, and many other clustering algorithms can quickly be ruled out due their time complexity of at least $\bigO(n^2)$. The only possibility is to do the analysis on a small subset of clusters, construct and store the CDFs into a k-d tree and then adding every other photon to it's closest CDF in $\bigO(\log k)$, where $k$ is the number of clusters. We found those approaches not stable enough, with a small subset scene details are quickly missed, with a bigger subset scaling becomes an issue. Also adding several million photons in $\bigO(\log k)$ is feasible but is still significant. Further, we have to produce spherical clusters, because photons will be reduced into their centroid, from where structural information is lost, only a spherical influence radius is retained from then on. See figure \ref{fig:clustering} for a comparison. Producing only hyper-sphere clusters is often considered a drawback of k-means clustering, but is exactly what we need in this case. Having to define the number of centroids beforehand is also not a problem for us.
 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/plots/mlclustering.pdf}
+    \caption{Some figure}
+    \label{fig:clustering}
+\end{figure}
+    
 We have done extensive tests with k-means clustering, but at first highly underestimated the amount of clusters we need to produce good results. K-means clustering with k-means++ seeding \cite{DBLP:conf/soda/ArthurV07} is considered one of the fastest clustering algorithms with a time complexity of $\bigO(nkdi)$ where $n$ is the number of $d$-dimensional data points, $k$ the number of clusters and $i$ the number of iterations needed to converge. This does work with several million photons and a few dozen clusters, but we found that a typical scene would at least need several thousand CDFs. With a high $n$ and high $k$ scaling quickly becomes a problem again. Quite recent work from \cite{DBLP:conf/kse/HieuM14}, \cite{DBLP:journals/tpds/XuQLMLL14} and \cite{DBLP:conf/www/Sculley10} introduced better scaling to k-means at the cost of slight approximations, which in fact shouldn't really bother us. We especially tried working with the mini-batch k-means algorithm, but once again, scaling was an issue. Our last attempt at a clustering algorithm was Birch \cite{DBLP:conf/sigmod/ZhangRL96} from the sci-kit learn machine learning library \cite{scikit-learn}. Coming closer to our needs, we still were bound by either time or memory, depending on the configuration, and couldn't manage to achieve desirable run times.
 
 We don't bother very much for the exact cluster affinity of single photons, thus a good approximation of spatial subdivision should be enough. This is often not the case for machine learning purposes. Also the dimensionality is often higher. In fact, k-d trees offer exactly this spatial subdivision based on surface area heuristics in 3D but fail for higher dimensions. With a construction time of $\bigO(n \log n)$ they fit our scalability needs and we can configure how many photons our leafs should maximally have. There are still peculiarities like single photon leafs that we have to handle, we discuss this in section \ref{ch:ev:cdftree}. After the k-d tree is constructed we iterate each leaf, calculate the centroid of each leaf based on the contained photons and construct a CDF to place on that centroid. After all CDFs are constructed we construct a new k-d tree over all CDFs. This k-d tree is then later used for lookups from within the integrator in $\bigO(\log k)$.
@@ -169,13 +176,6 @@ The choice which interpolation method can be used highly depends on the fact whe
 
 \subsection{Structured data - Trilinear interpolation}
 \label{ch:trilinear}
-
-    \begin{figure}
-        \centering
-        \includegraphics[width=0.6\textwidth]{figures/mlclustering.pdf}
-        \caption{Some figure}
-        \label{fig:fasf}
-    \end{figure}
 
 \subsection{Unstructured data - Shepard interpolation}
 \label{ch:unstructured}
