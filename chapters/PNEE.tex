@@ -14,7 +14,7 @@ Note that when the photon count goes towards infinity and the intersection searc
 
 \section{Mix and match}
 
-Throughout this work we explored several techniques that trade off time, memory and image quality (visible artifacts)\footnote{As all our techniques are unbiased, images always converge against the same result. In practice those artifacts converge almost never, thus we list artifacts, even though they just can be seen as huge time tradeoff.}. From a meta-perspective we can divide our technique into several subprocesses:
+Throughout this work we explored several techniques that trade off time, memory and image quality (visible artifacts)\footnote{As all our techniques are unbiased, images always converge against the same result. In practice those artifacts converge almost never, thus we list artifacts, even though they just can be seen as an unproportional time tradeoff.}. From a meta-perspective we can divide our technique into several subprocesses:
 
 \begin{itemize}
     \item shoot photons (section~\ref{ch:shootph})
@@ -157,7 +157,7 @@ In theory, a completely converged picture would always resemble the real light t
 \begin{figure}[htb] 
 	\centering
     \input{figures/varianceEdgeCdfgrid.tex}
-    \caption{\textit{Cdfgrid} without interpolation. Even though most of the image is well converged, (b) shows clear variance edges. The CDF is constructed mostly in the dark area, where it works well. The lighting is rapidly changed, the used CDF becomes a bad estimator. } 
+    \caption{\textit{Cdfgrid} without interpolation. Even though most of the image is well converged, (b) shows clear variance edges. The CDF construction is dominated by the photons in the darker area, where it works well. The lighting is rapidly changed, the used CDF becomes a bad estimator.} 
     \label{fig:varianceEdgeCdfgrid}
 \end{figure}
 
