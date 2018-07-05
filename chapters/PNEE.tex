@@ -145,7 +145,7 @@ Our first intuition was to make a cluster analysis on the photons to find cluste
 \begin{figure}
     \centering
     \includegraphics[width=0.8\textwidth]{figures/plots/mlclustering.pdf}
-    \caption{Some figure}
+    \caption{The centroids of the AHC cluster in plot a) would both be in the center, placing two CDFs close to each other each representing another circle would not make sense. Mini-batch k-means produces very similar results to k-means with better scaling, only few differences are seen in c). Birch does not produce voronoi clusters, but differences are acceptable, and it scales best for larger data sets.}
     \label{fig:clustering}
 \end{figure}
     
@@ -179,6 +179,22 @@ The choice which interpolation method can be used highly depends on the fact whe
 
 \subsection{Unstructured data - Shepard interpolation}
 \label{ch:unstructured}
+
+\begin{equation}\label{eq:shepard}
+\widetilde{f}(x) = \sum_{k}^{N}\frac{w_k(x)}{\sum\nolimits_{j}w_j(x)}f(x_k)
+\end{equation}
+
+\begin{equation}\label{eq:kernelreg}
+\widetilde{f}(x) = \sum_{k}^{N}\frac{K(x,x_k)}{\sum\nolimits_{j}K(x, x_j)}f(x_k)
+\end{equation}
+
+\begin{equation}\label{eq:rbfkernel}
+K(x, x_k) = \mathrm{e}^{-(||x-x_k||/c)^2}
+\end{equation}
+
+\begin{equation}\label{eq:modshep}
+w_j(x) = \left[ \frac{ r - d(x, x_i)}{ rd(x, x_i) } \right]^2
+\end{equation}
 
 \section{Further Optimizations}
 
