@@ -49,11 +49,11 @@ other strategies                                    & CDFs \tdot{yellow}\tdot{gr
 
 \section{Shooting photons}
 \label{ch:shootph}
-The first step in the preprocess is to scatter out photons. We rely on the same theoretical basis as photon mapping (section \ref{sec:PM}) but without producing any kind of bias as long as our CDFs always inherit every light source. We generate photons at the scenes light sources and intersect them with our scene geometry. We sample the light source $x$ and a point s and direction $\omega$ on that light source with respect to a probability distribution. This bears opportunity to guide the generation of photons to maximize the photon density in the important parts of the scene. Let $L(s,\omega)$ be the radiance \unsure{radiance?} at point s in direction $\omega$, $p(x)$ the probability to sample light source $x$ and $p(\text{s}, \omega)$ the probability to sample the ray, the energy $\beta$ of this photon is calculated as follows.
+The first step in the preprocess is to scatter out photons. We rely on the same theoretical basis as photon mapping (section \ref{sec:PM}) but without producing any kind of bias as long as our CDFs always inherit every light source. We generate photons at the scenes light sources and intersect them with our scene geometry. We sample the light source $x$ and a point s and direction $\omega$ on that light source with respect to a probability distribution. This bears opportunity to guide the generation of photons to maximize the photon density in the important parts of the scene. Let $L(s,\omega)$ be the radiance \unsure{radiance?} at point s in direction $\omega$, $p(x)$ the probability to sample light source $x$ and $p(\text{s}, \omega)$ the probability to sample the ray, the flux $\beta$ of this photon is calculated as follows.
 
-\begin{equation}\label{eq:beta}
+\begin{align}\label{eq:beta}
 \beta = \frac{|\cos{\omega}|L(\text{s}, \omega)}{p(x)p(\text{s}, \omega)}
-\end{equation}
+\end{align}
 
 The basic approach is to use uniform CDFs to sample both $p(x)$ and $p(\text{s}, \omega)$. We found that results can be greatly enhanced for typical (but not all) scenes by sampling $x$ based on the light power. We elaborate differences in section \ref{ch:}\todo{input section}. In the future it might be of value to migrate sampling strategies presented for photon mapping to PNEE, see \cite{DBLP:conf/rt/SuykensW00}\todo{add more}. After we found the first intersection of the photon we check the surface BSDF, if it is fully specular, the photon can be discarded, if it has a diffuse part we store the photon, or at least its origin and $\beta$ in a data structure which we discuss in the next sections.
 
@@ -85,13 +85,13 @@ Another possibility is to directly store cumulative distribution functions durin
 \end{figure}
 
 We need \unsure{we need?} a CDF where only particular values from $0$ to $n$ may be sampled. We achieve this by using a classic CDF (inner CDF) with length $k$ and a hashmap which maps values $[1,k]\to [1,n]$\footnote{As the pre-image in $[1,k]\to [1,n]$ is a sequence this could also be a simple array instead of a hashmap. Before constructing the sparse CDF the photons are collected by some algorithm without knowing $k$ beforehand. As photons can originate from all $n$ light sources a hashmap is needed anyway. We continue with this hashmap to spare the conversion.}. After we sampled a number the map will map the sampled number to the original sample number. Further we also need a backmap which is the reverse of the former map. The backmap is used when you want to know the probability of a given original sample number $x$. The original sample number is mapped to the sample number that it corresponds to in the inner CDF, so the inner CDF can be queried for the corresponding probability. We additionally want to provide a base floor probability $b$, which is split equally by all $n$ light sources. Let $N$ be the set of all $n$ sample numbers and $K$ be the set of non-zero probability samples. The probability that a given sample $x$ is sampled by the sparse CDF is given as follows.
-\begin{equation}\label{eq:psparse}
+\begin{align}\label{eq:psparse}
  p_{\text{sparse}}(x) = 
 \begin{dcases}
     p_{\text{inner}}(\text{backmap}(x))(1 - b) + \frac{b}{n},& \text{if } x \in K\\
     \frac{b}{n}, & \text{otherwise}
 \end{dcases}
-\end{equation}
+\end{align}
 Even though we seemingly introduce unnecessary variance with this uniform base, it is absolutely crucial as we otherwise would introduce bias whenever our estimator would "forget" a light source, which is not uncommon for e.g. very distant or highly occluded light sources. Apart from that fact, it generally helps in areas where our estimator is bad for any reason, therefore the choice of $b$ should not be minimal, but rather roughly proportional to the expected quality of the estimator.
 
 Construction is done in $\bigO(k)$ space and time, sampling in $\bigO(\log{k})$. Comparing to lightcuts we have a simpler datastructure in hand, that rules out non contributing light samples effectively. If we assume that equal non-zero probabilities are rare, which should be the case with many photon contributions, we generally should outperform lightcuts, especially because sampling the dominant case $x \notin K$ runs in $\bigO(1)$. 
@@ -109,9 +109,9 @@ Suppose we want to sample a number from an interpolation between $d$ CDFs. A nai
 
 We receive a list of CDFs to interpolate and corresponding weights. We loop through the weights and normalize them, thus constructing an usual CDF that will sample $i \in [1,d]$. We keep an array of references to the base CDFs. Now, for the lookup we sample $i$ in $\bigO(\log{d})$ and then choose the $i'th$ CDF and sample within the CDF in $\bigO(\log{n})$. We now have the sample $x$ and also have to calculate the probability that $x$ was sampled. Let $c_i$ be the probability to sample the $i'th$ CDF and $p_i(x)$ the probability of sampling $x$ within the $i'th$ CDF, we calculate the probability as follows.
 
-\begin{equation}\label{eq:pinter}
+\begin{align}\label{eq:pinter}
     p_{\text{interpolated}}(x) = \sum_{i=1}^{d}p_{i}(x) \cdot c_i
-\end{equation}
+\end{align}
 
 The time complexity for this calculation is $\bigO(d)$, resulting in overall complexity $\bigO(\log{d} + \log{n} + d) = \bigO(d + \log{n})$. The whole process is illustrated in figure \ref{fig:interpolatedCDF}. Note that with our construction all base CDFs are required to have the same number of samples $n$ in the exact same order. This restriction might be lifted with additional maps, similar to sparse CDFs, but we have no need for it, as all our used CDFs have the same $n$ lights, thus we spare the overhead.
 
@@ -177,24 +177,34 @@ The choice which interpolation method can be used highly depends on the fact whe
 \subsection{Structured data - Trilinear interpolation}
 \label{ch:trilinear}
 
+\begin{align}\label{eq:trilinear}
+f(\alpha, \beta, \gamma) = a + \alpha\left(b + \beta(e + h\gamma)\right) + \beta(c + f\gamma) + \gamma(d + g\alpha)
+\end{align}
+
 \subsection{Unstructured data - Shepard interpolation}
 \label{ch:unstructured}
 
-\begin{equation}\label{eq:shepard}
+Shepard
+\begin{align}\label{eq:shepard}
 \widetilde{f}(x) = \sum_{k}^{N}\frac{w_k(x)}{\sum\nolimits_{j}w_j(x)}f(x_k)
-\end{equation}
+\end{align}
 
-\begin{equation}\label{eq:kernelreg}
-\widetilde{f}(x) = \sum_{k}^{N}\frac{K(x,x_k)}{\sum\nolimits_{j}K(x, x_j)}f(x_k)
-\end{equation}
-
-\begin{equation}\label{eq:rbfkernel}
-K(x, x_k) = \mathrm{e}^{-(||x-x_k||/c)^2}
-\end{equation}
-
-\begin{equation}\label{eq:modshep}
+Modified shepard
+\begin{align}\label{eq:modshep}
 w_j(x) = \left[ \frac{ r - d(x, x_i)}{ rd(x, x_i) } \right]^2
-\end{equation}
+\end{align}
+
+Confidence weighted Kernel Regression
+\begin{align}\label{eq:kernelreg}
+\widetilde{f}(x) = \sum_{k}^{N}\frac{K(x,x_k)}{\sum\nolimits_{j}K(x, x_j)}\omega_kf(x_k)
+\end{align}
+
+Kernel
+\begin{align}\label{eq:rbfkernel}
+K(x, x_k) = \mathrm{e}^{-(||x-x_k||/c)^2}
+\end{align}
+
+
 
 \section{Further Optimizations}
 
