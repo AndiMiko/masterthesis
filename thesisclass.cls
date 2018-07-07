@@ -312,7 +312,9 @@
 \usepackage{pgf}
 \usepackage{acronym}
 
+\usepackage{footnote}
 
+\makesavenoteenv{tabular*}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SPECIAL ZOOM COMMANDS FOR TIKZ SPY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newif\ifblackandwhitecycle

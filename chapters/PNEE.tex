@@ -31,15 +31,16 @@ For each subprocess we present several ideas, where mostly any permutation of th
 
 \newcommand{\tdot}[1]{ \tikz\draw[#1,fill=#1] (0,0) circle (.5ex); }
 \ra{1.3}
-\begin{tabular}{@{}llll@{}}\toprule
-shooting photons & form of storage & acceleration datastructure & interpolation \\ \midrule
+\begin{tabular*}{\textwidth}{@{}l @{\extracolsep{\fill}} lll@{}}\toprule
+shooting photons & form of storage & datastructure & interpolation \\ \midrule
 
 uniform \tdot{yellow}\tdot{blue}\tdot{green}        & photons \tdot{blue}               & hashed grid \tdot{yellow}                 & none \tdot{yellow}\tdot{blue}\tdot{green}\\
 powerbased \tdot{yellow}\tdot{blue}\tdot{green}     & lightcuts                         & k-d tree \tdot{blue}\tdot{green}          & trilinear \tdot{yellow} \\
-other strategies                                    & CDFs \tdot{yellow}\tdot{green}    &                                           & shepard \tdot{blue}\tdot{green}\\
+importance sampling                                    & CDFs \tdot{yellow}\tdot{green}    & Octree                                 & shepard \tdot{blue}\tdot{green}\\
+                                                    &                                   &                                           & K. Regression\footnote{Stricktly speaking Kernel Regression is an approximation rather than an interpolation.} \tdot{blue}\tdot{green} \\
 \bottomrule
 \multicolumn{4}{c}{cdfgrid \tdot{yellow} \qquad photontree \tdot{blue} \qquad cdftree \tdot{green}} 
-\end{tabular}
+\end{tabular*}
 %\captionof{table}{Various subtechniques introduced throughout this work. Colors indicate which subtechnique was implemented with the respective technique. }
 \label{tb:techniques}
 \end{center}
@@ -151,7 +152,7 @@ Our first intuition was to make a cluster analysis on the photons to find cluste
     
 We have done extensive tests with k-means clustering, but at first highly underestimated the amount of clusters we need to produce good results. K-means clustering with k-means++ seeding \cite{DBLP:conf/soda/ArthurV07} is considered one of the fastest clustering algorithms with a time complexity of $\bigO(nkdi)$ where $n$ is the number of $d$-dimensional data points, $k$ the number of clusters and $i$ the number of iterations needed to converge. This does work with several million photons and a few dozen clusters, but we found that a typical scene would at least need several thousand CDFs. With a high $n$ and high $k$ scaling quickly becomes a problem again. Quite recent work from \cite{DBLP:conf/kse/HieuM14}, \cite{DBLP:journals/tpds/XuQLMLL14} and \cite{DBLP:conf/www/Sculley10} introduced better scaling to k-means at the cost of slight approximations, which in fact shouldn't really bother us. We especially tried working with the mini-batch k-means algorithm, but once again, scaling was an issue. Our last attempt at a clustering algorithm was Birch \cite{DBLP:conf/sigmod/ZhangRL96} from the sci-kit learn machine learning library \cite{scikit-learn}. Coming closer to our needs, we still were bound by either time or memory, depending on the configuration, and couldn't manage to achieve desirable run times.
 
-We don't bother very much for the exact cluster affinity of single photons, thus a good approximation of spatial subdivision should be enough. This is often not the case for machine learning purposes. Also the dimensionality is often higher. In fact, k-d trees offer exactly this spatial subdivision based on surface area heuristics in 3D but fail for higher dimensions. With a construction time of $\bigO(n \log n)$ they fit our scalability needs and we can configure how many photons our leafs should maximally have. There are still peculiarities like single photon leafs that we have to handle, we discuss this in section \ref{ch:ev:cdftree}. After the k-d tree is constructed we iterate each leaf, calculate the centroid of each leaf based on the contained photons and construct a CDF to place on that centroid. After all CDFs are constructed we construct a new k-d tree over all CDFs. This k-d tree is then later used for lookups from within the integrator in $\bigO(\log k)$.
+We don't bother very much for the exact cluster affinity of single photons, thus a good approximation of spatial subdivision should be enough. This is often not the case for machine learning purposes. Also the dimensionality is often higher. In fact, k-d trees offer exactly this spatial subdivision based on surface area heuristics in 3D (but won't scale for higher dimensions). Even though we found applications of k-d tree as clustering algorithm, it is usually disregarded as not suitable for machine learning applications. With a construction time of $\bigO(n \log n)$ they fit our scalability needs and we can configure how many photons our leafs should maximally have. There are still peculiarities like single photon leafs that we have to handle, we discuss this in section \ref{ch:ev:cdftree}. After the k-d tree is constructed we iterate each leaf, calculate the centroid of each leaf based on the contained photons and construct a CDF to place on that centroid. After all CDFs are constructed we construct a new k-d tree over all CDFs. This k-d tree is then later used for lookups from within the integrator in $\bigO(\log k)$.
 
 Comparing to storing photons we reduced our lookup cost from $\bigO(\log n)$ to $\bigO(\log k)$ and the number of lookups can be significantly lower, as we only care about a smooth interpolation between the CDFs and don't have to worry about missing out on certain light sources. Additionally no hashes have to be computed, instead of a sparse CDF we are constructing an interpolated CDF, which has less overhead attached to it. Nonetheless, we are giving up precision and we are dependent on the quality of our preprocess and interpolation. We discuss interpolating unstructured data points in section \ref{ch:unstructured}.
 
@@ -172,38 +173,81 @@ With our techniques we either collect photons or CDFs, for both methods interpol
 
 With CDFs one might expect considering only the closest CDF might be enough, as a CDF already contains a probability representation for all lights. This might be true for cases when occlusion is not taking into account when the CDFs are calculated. As PBRTs implementation (section \ref{ch:prev:pbrt}) does demonstrate, CDFs are only calculated by distances and angles, due to their spatial correlation adjacent CDFs are similar to each other, thus variance edges are often not noticeable, but still occur, as figure \ref{fig:spatialedge} shows. In that sense, their estimator function is still discrete, but adjacent estimators are by design similar to each other most of the time. This is not true anymore when occlusion is factored in. A single object between two adjacent CDFs could completely change their registered photons. Sampling only the nearest neighbour does result in a very noticeable voronoi diagram, see figure \ref{fig:voronoi}. This can only be solved by interpolation, which generally increases overall variance, but removes those unwanted edges.
 
-The choice which interpolation method can be used highly depends on the fact whether the structure of the data points is known and which structure it has. Interpolating with structured data, especially with a uniform grid, is comparatively fast and easy. We discuss our approach in the following section. For unstructured data, either photons or CDFs, interpolation is harder to achieve without creating artifacts. We considered precomputing a 3D-Delaunay triangulation and applying local interpolation methods, which only makes sense for CDFs, but algorithms like bowyer-watson wouldn't scale well enough for our needs. Additionally, our results indicated, that interpolating within a tetrahedral with only four CDFs, wouldn't mask outlier CDFs well enough. We instead discuss modified global interpolation methods in section \ref{ch:unstructured}. Nonetheless, we acknowledge that there are more interesting interpolation methods or kernels that might be worth to explore.
+The choice which interpolation method can be used highly depends on the fact whether the structure of the data points is known and which structure it has. Interpolating with structured data, especially with a uniform grid, is comparatively fast and easy. We discuss our approach for this case in the following section. For unstructured data, either photons or CDFs, interpolation is harder to achieve without creating artifacts. We considered precomputing a 3D-Delaunay triangulation and applying local interpolation methods, which only makes sense for CDFs, but algorithms like bowyer-watson wouldn't scale well enough for our needs. Additionally, our results indicated, that interpolating within a tetrahedral with only four CDFs, wouldn't mask outlier CDFs well enough. We instead discuss modified global interpolation methods in section \ref{ch:unstructured}. Nonetheless, we acknowledge that there are more interpolation methods or kernels that might be worth to explore.
 
 \subsection{Structured data - Trilinear interpolation}
 \label{ch:trilinear}
 
-\begin{align}\label{eq:trilinear}
-f(\alpha, \beta, \gamma) = a + \alpha\left(b + \beta(e + h\gamma)\right) + \beta(c + f\gamma) + \gamma(d + g\alpha)
+We apply trilinear interpolation together with the hashed grid in our cdfgrid implementation. Each cell in our hashed grid has 26 neighbours in three dimensions. Based on the shading points location we choose seven neighbours, additionally to the cell itself, to get the eight CDFs $a,b,c,d,e,f,g,h$ at the vertice points with combinations of the coordinates $x_i, x_{i+1}, y_i, y_{i+1}, z_i, z_{i+1}$. Together with the relative coordinates $\alpha, \beta, \gamma$, an interpolation can be calculated with equation~\ref{eq:trilinear} (see also section~\ref{ch:fu:trilinear}).
+
+\begin{align}
+    \alpha = \frac{x-x_i}{x_{i+1}-x_i}, \beta = \frac{y-y_i}{y_{i+1}-y_i}, \gamma = \frac{z-z_i}{z_{i+1}-z_i},
 \end{align}
+\begin{align}\label{eq:trilinear}
+    f(\alpha, \beta, \gamma) = a + \alpha\left(b + \beta(e + h\gamma)\right) + \beta(c + f\gamma) + \gamma(d + g\alpha)
+\end{align}
+
+As we do not evaluate this equation directly, but rather construct a interpolated CDF to allow for sublinear sampling later on, we have to provide weights for all eight CDFs. We achieve that by transposing equation~\ref{eq:trilinear} as in equation~\ref{eq:trilinearw}, so that the weight per CDF corresponds to the product of relative coordinates in front of it. In fact, the weight is the volume of the opposing cuboid.
+
+
+\begin{align}\label{eq:trilinearw}
+    f(\alpha, \beta, \gamma) &= (1-\alpha)(1-\beta)(1-\gamma)a + (1-\alpha)(1-\beta)\gamma b  \notag \\
+    &+ (1-\alpha)\beta(1-\gamma)c  + (1-\alpha)\beta\gamma d \\
+    &+ \alpha(1-\beta)(1-\gamma)e + \alpha)(1-\beta)\gamma f \notag \\
+    &+ \alpha\beta\gamma g  \notag
+\end{align}
+
+\todo{Smooth Step ...}
 
 \subsection{Unstructured data - Shepard interpolation}
 \label{ch:unstructured}
 
-Shepard
+Throughout this chapter we argue mostly about interpolating CDFs, most logic can be applied to photons in the same or simpler fashion. The most common method to do global interpolation on unstructured data are Radial Basis Functions (RBF). We considered using RBFs, but found that not only scaling is an issue, but as our function values are N-dimensional CDFs, we were not able to precompute meaningful weights\unsure{maybe just leave that out? Is this correct?}. Also, with RBFs all data points have to be evaluated for a correct result, which is not possible, as we query only some nearest neighbours. Another common approach is to use shepard interpolation to interpolate $\widetilde{f}(x)$ from data points $x_k$ with its corresponding values $f(x_k)$. 
+
 \begin{align}\label{eq:shepard}
 \widetilde{f}(x) = \sum_{k}^{N}\frac{w_k(x)}{\sum\nolimits_{j}w_j(x)}f(x_k)
 \end{align}
 
-Modified shepard
+The weight $w_k(x)$ is then only calculated based on distance. A standard approach is to use the inverse distance weight (\ref{eq:inverseDistance}), with parameter $p > 0$ which can be used to smooth the interpolation and $d(x, x_j)$ which is the distance metric (euclidean distance in our case).
+
+\begin{align}\label{eq:inverseDistance}
+w_j(x) = \frac{1}{d(x, x_j)^p}
+\end{align}
+
+In fact, shepard interpolation is meant to be used as a global interpolation just like RBF. Opposed to RBFs you can use inverse distance weight locally, the function is still interpolated, but looses its continuity, as seen in figure~\ref{fig:lostContinuity}. The reason is, that as you progress through the interpolated function, the outmost nearest neighbour will always snap to another one. With an increasing amount of nearest neighbours the outmost data data point looses significance so the effect becomes less noticeable. But continuity can be restored with the modified shepard method \todo{add cites} where $w_j(x)$ is constructed in such a way, that the outmost nearest neighbour always fade out to zero (equation~\ref{eq:modshep}), therefore the function does not snap when the outmost data value changes.
+
 \begin{align}\label{eq:modshep}
 w_j(x) = \left[ \frac{ r - d(x, x_i)}{ rd(x, x_i) } \right]^2
 \end{align}
 
-Confidence weighted Kernel Regression
+Modified Shepard can be succuessfully used for smooth local interpolation, but inverse distance weighting still has a draw back with our scenario. As $d(x, x_i)$ goes to zero, $w_j(x)$ goes to infinity, this is not only a small implementation problem, but it also creates peaks so that there is always a shading point where a single CDF dominates. This is in fact needed for interpolation and is completely fine for most cases, but we found that in some cases we construct a bad CDF and interpolation with other CDFs won't help at this extreme point, thus leading to variance holes as seen in figure~\ref{fig:varianceHoles}. The only possibility to achieve a smooth appeal is to give up on exact interpolation, but rather approximate the function at the cost of minimally higher overall variance. In fact approximation is what we wanted in the first place, as our underlying CDFs are approximations already, thus strictly interpolating to them is not necessary meaningful in the first place.
+
+A generalization of Shepard interpolation is Kernel Regression (\ref{eq:kernelreg}), where $K(x, x_j)$ is an arbitrary kernel, which opposed to $w_j(x)$ has not to go to infinity when the distance goes to zero, and thus $\widetilde{f}(x)$ approximates instead of interpolates. 
+
 \begin{align}\label{eq:kernelreg}
+\widetilde{f}(x) = \sum_{k}^{N}\frac{K(x,x_k)}{\sum\nolimits_{j}K(x, x_j)}f(x_k)
+\end{align}
+
+We had good smooth results with a commonly used Gaussian kernel (\ref{eq:gaussiankernel}), but there is a big variety of kernels that can be explored. $p$, again, can be used to define the kernel radius and thus controls the smoothing.
+
+\begin{align}\label{eq:gausskernel}
+K(x, x_j) = \mathrm{e}^{-(||x-x_j||/p)^2}
+\end{align}
+
+With this approximation approach variance holes are smoothed quite well already. We found that most CDFs were constructed by a similar amount of photons, but there are outliers. That outliers mostly, but not always were assigned just very few photons by the k-d tree clustering. As such one more way to further smooth the image and weaken those outliers is to add a confidence weight $\omega_k$ into Kernel Regression (\ref{eq:ckernelreg}). $\omega_k$ is the number of photons that were used to construct the CDF at $x_k$.
+
+\begin{align}\label{eq:ckernelreg}
 \widetilde{f}(x) = \sum_{k}^{N}\frac{K(x,x_k)}{\sum\nolimits_{j}K(x, x_j)}\omega_kf(x_k)
 \end{align}
 
-Kernel
-\begin{align}\label{eq:rbfkernel}
-K(x, x_k) = \mathrm{e}^{-(||x-x_k||/c)^2}
-\end{align}
 
+\begin{align}
+K(x, x_j)&=\mathrm{e}^{-\left(\frac{||x-x_j||}{p}\right)^2} \\
+0.01 &= \mathrm{e}^{-\left(\frac{||x-x_j||}{p}\right)^2} \\
+\ln{0.01} &= -\left(\frac{||x-x_j||}{p}\right)^2 \\
+\sqrt{-\ln{0.01}} &= \frac{||x-x_j||}{p} \\
+p &= \frac{||x-x_j||}{\sqrt{-\ln{0.01}}}
+\end{align}
 
 
 \section{Further Optimizations}
