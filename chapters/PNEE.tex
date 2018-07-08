@@ -58,6 +58,10 @@ The first step in the preprocess is to scatter out photons. We rely on the same 
 
 The basic approach is to use uniform CDFs to sample both $p(x)$ and $p(\text{s}, \omega)$. We found that results can be greatly enhanced for typical (but not all) scenes by sampling $x$ based on the light power. We elaborate differences in section \ref{ch:}\todo{input section}. In the future it might be of value to migrate sampling strategies presented for photon mapping to PNEE, see \cite{DBLP:conf/rt/SuykensW00}\todo{add more}. After we found the first intersection of the photon we check the surface BSDF, if it is fully specular, the photon can be discarded, if it has a diffuse part we store the photon, or at least its origin and $\beta$ in a data structure which we discuss in the next sections.
 
+\paragraph*{Importance sampling photons}
+\label{ch:photonimportancesample}
+...
+
 \section{Form of storage}
 \label{ch:formofstorage}
 
@@ -66,6 +70,10 @@ The basic approach is to use uniform CDFs to sample both $p(x)$ and $p(\text{s},
 Storing every photon with its weight and potentially additional data like the direction it came from is the most precise form to later compute our estimator, as the number of datapoints corresponds to our photon count. For every intersection point we evaluate the surrounding photons and compute an individual cumulative distribution function. As the photon count is quite high, typically several million unevenly distributed datapoints, the lookup is a bottleneck in this case, even with acceleration structures like a k-d tree that we discuss in section~\ref{sec:pneekdtree}. Nonetheless, the approach is worthwhile due to the potential quality of the estimator.
 
 If we want to lessen the strain on the integrator, we might reduce the number of datapoints within the preprocess and store an approximation instead of every individual photon. We accumulate the $\beta$ per light sample $x$ within a defined area. Then this map of weights is transformed into a lightcut or CDF.
+
+\paragraph*{Normal Culling}
+\label{ch:normalculling}
+...
 
 \subsection{Lightcut}
 
@@ -165,7 +173,7 @@ In theory, a completely converged picture would always resemble the real light t
 \begin{figure}[htb] 
 	\centering
     \input{figures/varianceEdgeCdfgrid.tex}
-    \caption{\textit{Cdfgrid} without interpolation. Even though most of the image is well converged, (b) shows clear variance edges. The CDF construction is dominated by the photons in the darker area, where it works well. The lighting is rapidly changed, the used CDF becomes a bad estimator.} 
+    \caption{\textit{Cdfgrid} without interpolation. Even though most of the image is well converged, (b) shows clear variance edges. The CDF construction is dominated by the photons in the darker area, where it works well. As the lighting changes rapidly, the used CDF becomes a bad estimator.} 
     \label{fig:varianceEdgeCdfgrid}
 \end{figure}
 
@@ -181,7 +189,7 @@ The choice which interpolation method can be used highly depends on the fact whe
 We apply trilinear interpolation together with the hashed grid in our cdfgrid implementation. Each cell in our hashed grid has 26 neighbours in three dimensions. Based on the shading points location we choose seven neighbours, additionally to the cell itself, to get the eight CDFs $a,b,c,d,e,f,g,h$ at the vertice points with combinations of the coordinates $x_i, x_{i+1}, y_i, y_{i+1}, z_i, z_{i+1}$. Together with the relative coordinates $\alpha, \beta, \gamma$, an interpolation can be calculated with equation~\ref{eq:trilinear} (see also section~\ref{ch:fu:trilinear}).
 
 \begin{align}
-    \alpha = \frac{x-x_i}{x_{i+1}-x_i}, \beta = \frac{y-y_i}{y_{i+1}-y_i}, \gamma = \frac{z-z_i}{z_{i+1}-z_i},
+    \alpha = \frac{x-x_i}{x_{i+1}-x_i}, \qquad \beta = \frac{y-y_i}{y_{i+1}-y_i}, \qquad \gamma = \frac{z-z_i}{z_{i+1}-z_i}
 \end{align}
 \begin{align}\label{eq:trilinear}
     f(\alpha, \beta, \gamma) = a + \alpha\left(b + \beta(e + h\gamma)\right) + \beta(c + f\gamma) + \gamma(d + g\alpha)
@@ -202,7 +210,7 @@ As we do not evaluate this equation directly, but rather construct a interpolate
 \subsection{Unstructured data - Shepard interpolation}
 \label{ch:unstructured}
 
-Throughout this chapter we argue mostly about interpolating CDFs, most logic can be applied to photons in the same or simpler fashion. The most common method to do global interpolation on unstructured data are Radial Basis Functions (RBF). We considered using RBFs, but found that not only scaling is an issue, but as our function values are N-dimensional CDFs, we were not able to precompute meaningful weights\unsure{maybe just leave that out? Is this correct?}. Also, with RBFs all data points have to be evaluated for a correct result, which is not possible, as we query only some nearest neighbours. Another common approach is to use shepard interpolation to interpolate $\widetilde{f}(x)$ from data points at $x_k \in N$ with its corresponding values $f(x_k)$. 
+Throughout this chapter we argue mostly about interpolating CDFs, most logic can be applied to photons in the same or simpler fashion. The most common method to do global interpolation on unstructured data are Radial Basis Functions (RBF). We considered using RBFs, but found that not only scaling is an issue, but as our function values are N-dimensional CDFs, we were not able to precompute meaningful weights\unsure{maybe just leave that out? Is this correct?}. Also, with RBFs all data points have to be evaluated for a correct result, which is not possible, as we query only some nearest neighbours. Another common approach is to use Shepard interpolation to interpolate $\widetilde{f}(x)$ from data points at $x_k \in N$ with its corresponding values $f(x_k)$. 
 
 \begin{align}\label{eq:shepard}
 \widetilde{f}(x) = \sum_{k}^{N}\frac{w_k(x)}{\sum\nolimits_{j}w_j(x)}f(x_k)
@@ -216,7 +224,7 @@ w_j(x) = \frac{1}{d(x, x_j)^p}
 
 \paragraph{Modified Shepard method}
 
-In fact, shepard interpolation is meant to be used as a global interpolation just like RBFs. Opposed to RBFs you can use inverse distance weight locally, the function is still interpolated, but looses its continuity, as seen in figure~\ref{fig:lostContinuity}. The reason is, that as you progress through the interpolated function, the outmost nearest neighbour will always snap to another one. With an increasing amount of nearest neighbours the outmost data data point looses significance so the effect becomes less noticeable. But continuity can be restored with the modified shepard method \todo{add cites} where $w_j(x)$ is constructed in such a way, that the outmost nearest neighbour always fade out to zero (equation~\ref{eq:modshep}), therefore the function does not snap when the outmost data value changes.
+In fact, shepard interpolation is meant to be used as a global interpolation just like RBFs. Opposed to RBFs you can use inverse distance weight locally, the function is still interpolated, but looses its continuity, as seen in figure~\ref{fig:lostContinuity}. The reason is, that as you progress through the interpolated function, the outmost nearest neighbour will sometimes snap to another one. With an increasing amount of nearest neighbours the outmost data data point looses significance so the effect becomes less noticeable. But continuity can be restored with the modified Shepard method \todo{add cites} where $w_j(x)$ is constructed in such a way, that the outmost nearest neighbour always fade out to zero (equation~\ref{eq:modshep}), therefore the function does not snap when the outmost data value changes.
 
 \begin{align}\label{eq:modshep}
 w_j(x) = \left[ \frac{ r - d(x, x_i)}{ rd(x, x_i) } \right]^2
@@ -224,7 +232,7 @@ w_j(x) = \left[ \frac{ r - d(x, x_i)}{ rd(x, x_i) } \right]^2
 
 \paragraph{Kernel Regression}
 
-Modified Shepard can be succuessfully used for smooth local interpolation, but inverse distance weighting still has a draw back with our scenario. As $d(x, x_i)$ goes to zero, $w_j(x)$ goes to infinity, this is not only a small implementation problem, but it also creates peaks so that there is always a shading point where a single CDF dominates. This is in fact needed for interpolation and is completely fine for most cases, but we found that in some cases we construct a bad CDF and interpolation with other CDFs won't help at this extreme point, thus leading to variance holes as seen in figure~\ref{fig:varianceHoles}. The only possibility to achieve a smooth appeal is to give up on exact interpolation, but rather approximate the function at the cost of minimally higher overall variance. In fact approximation is what we wanted in the first place, as our underlying CDFs are approximations already, thus strictly interpolating to them is not necessary meaningful in the first place.
+Modified Shepard can be successfully used for smooth local interpolation, but inverse distance weighting still has a draw back with our scenario. As $d(x, x_i)$ goes to zero, $w_j(x)$ goes to infinity, this is not only a small implementation problem, but it also creates peaks so that there is always a shading point where a single CDF dominates. This is in fact needed for interpolation and is completely fine for most cases, but we found that in some cases we construct a bad CDF and interpolation with other CDFs won't help at this extreme point, thus leading to variance holes as seen in figure~\ref{fig:varianceHoles}. The only possibility to achieve a smooth appeal is to give up on exact interpolation, but rather approximate the function at the cost of minimally higher overall variance. In fact approximation is what we wanted in the first place, as our underlying CDFs are approximations already, thus strictly interpolating to them is not necessary meaningful in the first place.
 
 A generalization of Shepard interpolation is Kernel Regression (\ref{eq:kernelreg}), where $K(x, x_j)$ is an arbitrary kernel, which opposed to $w_j(x)$ has not to go to infinity when the distance goes to zero, and thus $\widetilde{f}(x)$ approximates instead of interpolates. 
 
@@ -239,7 +247,7 @@ K(x, x_j) = \mathrm{e}^{-\left(\frac{||x-x_j||}{p}\right)^2}
 \end{align}
 
 \paragraph{Confidence weighted Kernel Regression}
-
+\label{ch:ckernelreg}
 With this approximation approach variance holes are smoothed quite well already. We found that most CDFs were constructed by a similar amount of photons, but there are outliers. That outliers mostly, but not always were assigned just very few photons by the k-d tree clustering. As such one more way to further smooth the image and weaken those outliers is to add a confidence weight $\omega_k$ into Kernel Regression (\ref{eq:ckernelreg}). $\omega_k$ is the number of photons that were used to construct the CDF at $x_k$. The same weight is used with Shepard interpolation accordingly.
 
 \begin{align}\label{eq:ckernelreg}
@@ -272,28 +280,26 @@ p &= \frac{||x-x_\tau||}{\sqrt{-\ln(\eta)}} \label{eq:p0}
 Other approaches to solve continuous smooth local approximation exist, for example the Nadaraya-Watson estimator \cite{nadaraya1964estimating}, which uses a fixed lookup radius instead of nearest neighbours. This suffers from the fact that the choice of the big radius may blur detail, a small radius may not smooth the estimators enough. Still a plethora of other techniques may apply and are worthwhile for further research.
 
 
-\section{Further Optimizations}
+\section{Further Considerations}
 
+Combining and applying subprocesses from section~\ref{ch:formofstorage}~through~\ref{ch:interpolation} does yield viable and complete techniques. In this section we further discuss potentials and ideas that we found interesting to consider, but we did not had the chance to implement or look deeper into.
 
+\subsection{Adaptive Parametrization}
 
-\subsection{Normal culling}
+With each technique that we implemented we had a variety of parameters (roughly 10) that we used to configure and test. Some parameters we consider \textit{stable}, which means that when changing the parameter you would probably loose or gain some speed, some variance or even nothing noticeable happens. These parameters are good in a sense, because no specific knowledge of the technique is needed, those parameters can even have default values or be hard coded entirely. On the other hand we have \textit{fragile} parameters, those parameters change a lot of things and probably even create artifacts when set up badly. In the worst case parameters are even cross dependant, making finding a optimal combination hard even for experts. They require extensive knowledge of the technique and on top of that can not be predefined as they are highly scene dependant. To set them up correctly one usually would have to do multiple test renderings. Even though renderings usually can be done quickly with a relatively low amount of pixel samples, testing through a high amount of fragile parameter combinations can quickly become tedious. Part of the quality for widespread application of a technique is dependent on the amount of fragile parameters, even though we do not rule out, that a very fragile technique can be useful for specific usecases nonetheless.
 
+One way to conquer this issue is to let the system learn and decide on the parameters adaptively, just as we showed with adaptive interpolation schemes previously. We list a few parameters where we think a adaptive parametrization makes sense (or not) and can be achieved with appropriate effort.
 
+\begin{description}
+    \item[Photon Count.] While we consider the photon count quite stable for cdfgrid, the adaptive techniques cdftree and photontree are quite fragile with the photon count because CDFs are constructed based on the density of photons at a certain location. This leads us to the intuitive approach to shoot out photons iteratively in small batches and measure the variance of the CDF probabilities or photon densities in different parts of the scene, after each batch to decide whether the following batch is worth shooting. This especially makes sense with importance sampling techniques which we mentioned in section~\ref{ch:photonimportancesample} to additionally homogenize density. In-depth research from photon mapping can easily be applied, for example see \cite{}.
+    \item[Samples per pixel.] This parameter is not unique to our techniques. Nonetheless, there is extensive research on adaptively continue sampling high variance parts of the image \cite{}. For our technique that can be especially useful to smooth variance edges in case they were not already smoothed by one of our interpolation techniques.
+    \item[Max grid cells.] This parameter defines how many grid cells per dimension are maximally allowed for our cdfgrid technique. This parameter is quite stable, as increasing it only provides better LOD. Nonetheless there is an easy way to choose it adaptively. It scales badly with memory consumtion, but increasing it has hardly any other drawbacks, thus just setting it to use up most of the available RAM might be a good idea.
+    \item[Uniform floor.] The uniform floor keeps our technique unbiased by always having a uniform part where all light sources are considered, see section~\ref{sec:sparse}. Instead of fixing the floor which is shared by all light sources, one could set a probability per light source, so scenes with many light sources wouldn't have negligible probabilities per light. Obviously this has to be capped, so a combination of both might be a good idea. Additionally, for each CDF a confidence scale, similar to the confidence introduced in section~\ref{ch:ckernelreg}, could be utilized to adaptively set the uniform floor per CDF.
+    \item[NN-count.] The NN parameter defines how many nearest neighbour CDFs or photons are collected for interpolation in section~\ref{ch:unstructured}. In this section we already introduced several schemes to stabilize this parameter. The parameter has still to be set. We found the parameter to not be very scene dependant with respective schemes, thus finding and setting a good default value works most of the time.
+    \item[NN-radius.] Instead of querying for a fixed count, a radius can be used to collect a variable amount of nearest neighbours instead. Early results indicated, that this parameter is more fragile, we thus focused on the adaptive count queries. We still think there is potential to improve the stability of this parameter with techniques like Nadaraya-Watson estimators \cite{nadaraya1964estimating}.
+    \item[CDF Count.] With cdftree the rough number of CDFs that should be created by the k-d tree clustering preprocess can be set. Another possibility would be to set how many photons should roughly form a CDF. Both approaches have pros and cons, doing an adaptive calculation of the mix of both might worthwhile. We found the parameter to be somewhat stable in the sense that a high range works just fine, but on the other hand it is quite dependant on the provided photon density and thus on the scene and other parameters. A good value can usually be quickly found manually.
+    \item[Photon threshold.] This parameter defines a lower threshold of the amount of photons that are used to construct a CDF with cdftree. A cluster with less photons is simply discarded. The clustering does often produce clusters with just one or a few photons, those CDFs are usually outliers. The parameter has to be high enough to remove outliers, but not too high, as actually important CDFs could disappear. The parameter can stay fixed most of the time, but produces clear artifacts if it fails. Good interpolation/approximation techniques mitigates problems with outliers, but apart from that we don't see too much room to make this adaptive. Fine-tuning the clustering algorithm itself might make this parameter obsolete.
+    
+\end{description}
 
-
-
-
-\section{Adaptive Parametrization}
-
-\subsection{Photon Count}
-
-\subsection{Adaptive importance weight}
-
-
-
-\begin{align}
-&&K(x, x_\tau)&=\mathrm{e}^{-\left(\frac{||x-x_\tau||}{p}\right)^2} \\
-&\Leftrightarrow&\ln{K(x, x_\tau)} &= -\left(\frac{||x-x_\tau||}{p}\right)^2 \\
-&\Leftrightarrow& \sqrt{-\ln{K(x, x_\tau)}} &= \frac{||x-x_\tau||}{p} \\
-&\Leftrightarrow& p &= \frac{||x-x_\tau||}{\sqrt{-\ln{K(x, x_\tau)}}}
-\end{align}
+\subsection{Adaptive importance weight for MIS}
