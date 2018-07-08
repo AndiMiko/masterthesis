@@ -315,6 +315,8 @@
 \usepackage{footnote}
 
 \makesavenoteenv{tabular*}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SPECIAL ZOOM COMMANDS FOR TIKZ SPY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newif\ifblackandwhitecycle

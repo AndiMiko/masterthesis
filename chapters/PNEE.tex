@@ -202,7 +202,7 @@ As we do not evaluate this equation directly, but rather construct a interpolate
 \subsection{Unstructured data - Shepard interpolation}
 \label{ch:unstructured}
 
-Throughout this chapter we argue mostly about interpolating CDFs, most logic can be applied to photons in the same or simpler fashion. The most common method to do global interpolation on unstructured data are Radial Basis Functions (RBF). We considered using RBFs, but found that not only scaling is an issue, but as our function values are N-dimensional CDFs, we were not able to precompute meaningful weights\unsure{maybe just leave that out? Is this correct?}. Also, with RBFs all data points have to be evaluated for a correct result, which is not possible, as we query only some nearest neighbours. Another common approach is to use shepard interpolation to interpolate $\widetilde{f}(x)$ from data points $x_k$ with its corresponding values $f(x_k)$. 
+Throughout this chapter we argue mostly about interpolating CDFs, most logic can be applied to photons in the same or simpler fashion. The most common method to do global interpolation on unstructured data are Radial Basis Functions (RBF). We considered using RBFs, but found that not only scaling is an issue, but as our function values are N-dimensional CDFs, we were not able to precompute meaningful weights\unsure{maybe just leave that out? Is this correct?}. Also, with RBFs all data points have to be evaluated for a correct result, which is not possible, as we query only some nearest neighbours. Another common approach is to use shepard interpolation to interpolate $\widetilde{f}(x)$ from data points at $x_k \in N$ with its corresponding values $f(x_k)$. 
 
 \begin{align}\label{eq:shepard}
 \widetilde{f}(x) = \sum_{k}^{N}\frac{w_k(x)}{\sum\nolimits_{j}w_j(x)}f(x_k)
@@ -214,11 +214,15 @@ The weight $w_k(x)$ is then only calculated based on distance. A standard approa
 w_j(x) = \frac{1}{d(x, x_j)^p}
 \end{align}
 
-In fact, shepard interpolation is meant to be used as a global interpolation just like RBF. Opposed to RBFs you can use inverse distance weight locally, the function is still interpolated, but looses its continuity, as seen in figure~\ref{fig:lostContinuity}. The reason is, that as you progress through the interpolated function, the outmost nearest neighbour will always snap to another one. With an increasing amount of nearest neighbours the outmost data data point looses significance so the effect becomes less noticeable. But continuity can be restored with the modified shepard method \todo{add cites} where $w_j(x)$ is constructed in such a way, that the outmost nearest neighbour always fade out to zero (equation~\ref{eq:modshep}), therefore the function does not snap when the outmost data value changes.
+\paragraph{Modified Shepard method}
+
+In fact, shepard interpolation is meant to be used as a global interpolation just like RBFs. Opposed to RBFs you can use inverse distance weight locally, the function is still interpolated, but looses its continuity, as seen in figure~\ref{fig:lostContinuity}. The reason is, that as you progress through the interpolated function, the outmost nearest neighbour will always snap to another one. With an increasing amount of nearest neighbours the outmost data data point looses significance so the effect becomes less noticeable. But continuity can be restored with the modified shepard method \todo{add cites} where $w_j(x)$ is constructed in such a way, that the outmost nearest neighbour always fade out to zero (equation~\ref{eq:modshep}), therefore the function does not snap when the outmost data value changes.
 
 \begin{align}\label{eq:modshep}
 w_j(x) = \left[ \frac{ r - d(x, x_i)}{ rd(x, x_i) } \right]^2
 \end{align}
+
+\paragraph{Kernel Regression}
 
 Modified Shepard can be succuessfully used for smooth local interpolation, but inverse distance weighting still has a draw back with our scenario. As $d(x, x_i)$ goes to zero, $w_j(x)$ goes to infinity, this is not only a small implementation problem, but it also creates peaks so that there is always a shading point where a single CDF dominates. This is in fact needed for interpolation and is completely fine for most cases, but we found that in some cases we construct a bad CDF and interpolation with other CDFs won't help at this extreme point, thus leading to variance holes as seen in figure~\ref{fig:varianceHoles}. The only possibility to achieve a smooth appeal is to give up on exact interpolation, but rather approximate the function at the cost of minimally higher overall variance. In fact approximation is what we wanted in the first place, as our underlying CDFs are approximations already, thus strictly interpolating to them is not necessary meaningful in the first place.
 
@@ -230,24 +234,42 @@ A generalization of Shepard interpolation is Kernel Regression (\ref{eq:kernelre
 
 We had good smooth results with a commonly used Gaussian kernel (\ref{eq:gaussiankernel}), but there is a big variety of kernels that can be explored. $p$, again, can be used to define the kernel radius and thus controls the smoothing.
 
-\begin{align}\label{eq:gausskernel}
-K(x, x_j) = \mathrm{e}^{-(||x-x_j||/p)^2}
+\begin{align}\label{eq:gaussiankernel}
+K(x, x_j) = \mathrm{e}^{-\left(\frac{||x-x_j||}{p}\right)^2}
 \end{align}
 
-With this approximation approach variance holes are smoothed quite well already. We found that most CDFs were constructed by a similar amount of photons, but there are outliers. That outliers mostly, but not always were assigned just very few photons by the k-d tree clustering. As such one more way to further smooth the image and weaken those outliers is to add a confidence weight $\omega_k$ into Kernel Regression (\ref{eq:ckernelreg}). $\omega_k$ is the number of photons that were used to construct the CDF at $x_k$.
+\paragraph{Confidence weighted Kernel Regression}
+
+With this approximation approach variance holes are smoothed quite well already. We found that most CDFs were constructed by a similar amount of photons, but there are outliers. That outliers mostly, but not always were assigned just very few photons by the k-d tree clustering. As such one more way to further smooth the image and weaken those outliers is to add a confidence weight $\omega_k$ into Kernel Regression (\ref{eq:ckernelreg}). $\omega_k$ is the number of photons that were used to construct the CDF at $x_k$. The same weight is used with Shepard interpolation accordingly.
 
 \begin{align}\label{eq:ckernelreg}
 \widetilde{f}(x) = \sum_{k}^{N}\frac{K(x,x_k)}{\sum\nolimits_{j}K(x, x_j)}\omega_kf(x_k)
 \end{align}
 
+\paragraph{Adaptive confidence weighted Kernel Regression}
+Just like with Shepards interpolation, Kernel Regression is as well a global method in the first place. Using Kernel Regression with only a subset of nearest neighbours does create discontinuities in the approximated function which are visible as variance edges, see figure~\ref{fig:discontinuityEdges}. Applying a similar idea as in modified Shepard, we propose constructing the kernel in such a way, that $p$ adapts the radius of the kernel so that the outmost sample has a zero weight. The gaussian kernel previously presented (\ref{eq:gaussiankernel}) has no roots, thus we modify the kernel in equation~\ref{eq:modgaussiankernel} by substracting $\eta \in (0,1)$ to move the kernel down a bit and creating the roots we need, see figure~\ref{fig:KRkernel}. Any choice of $\eta$ does work, a big $\eta$ cuts off the bell curve early, a too small $\eta$ will let the flat part of the bell curve dominate the kernel. We want to preserve most characteristics of the bell curve, thus choosing $\eta$ at around $0.05$ seems intuitive.  As a next step we have to ensure, that the outmost sample $x_j$ is on the root, by adjusting the kernel radius with the help of $p$. Let $\tau$ be the index of the outmost sample defined as follows. 
 
 \begin{align}
-K(x, x_j)&=\mathrm{e}^{-\left(\frac{||x-x_j||}{p}\right)^2} \\
-0.01 &= \mathrm{e}^{-\left(\frac{||x-x_j||}{p}\right)^2} \\
-\ln{0.01} &= -\left(\frac{||x-x_j||}{p}\right)^2 \\
-\sqrt{-\ln{0.01}} &= \frac{||x-x_j||}{p} \\
-p &= \frac{||x-x_j||}{\sqrt{-\ln{0.01}}}
+\label{eq:tau}
+\tau = \argmax_j ||x - x_j||
 \end{align}
+
+Plug in the outmost sample $x_\tau$ into equation~\ref{eq:modgaussiankernel} and then rearrange it for the variable $p$ (\ref{eq:p}). 
+
+\begin{align}
+&&K(x, x_\tau)&=\mathrm{e}^{-\left(\frac{||x-x_\tau||}{p}\right)^2} - \eta \label{eq:modgaussiankernel} &&\\
+\Leftrightarrow&&\ln(K(x, x_\tau) + \eta) &= -\left(\frac{||x-x_\tau||}{p}\right)^2 \notag &&\\
+\Leftrightarrow&& \sqrt{-\ln(K(x, x_\tau + \eta)} &= \frac{||x-x_\tau||}{p} \notag &&\\
+\Leftrightarrow&& p &= \frac{||x-x_\tau||}{\sqrt{-\ln(K(x, x_\tau) + \eta)}} \label{eq:p}&&
+\end{align}
+
+We can now plug in a value for $K(x, x_\tau)$ in equation~\ref{eq:p} to calculate $p$, in such a way that the outmost sample $x_\tau$ receives a weight equal to this value\footnote{In fact, the weight will still be normalized in equation~\ref{eq:ckernelreg}, so the actual weight differs, but this does not matter for a zero weight.}. As we want $x_\tau$ to completely fade away, we plug in zero (\ref{eq:p0}).
+
+\begin{align}
+p &= \frac{||x-x_\tau||}{\sqrt{-\ln(\eta)}} \label{eq:p0}
+\end{align}
+
+Other approaches to solve continuous smooth local approximation exist, for example the Nadaraya-Watson estimator \cite{nadaraya1964estimating}, which uses a fixed lookup radius instead of nearest neighbours. This suffers from the fact that the choice of the big radius may blur detail, a small radius may not smooth the estimators enough. Still a plethora of other techniques may apply and are worthwhile for further research.
 
 
 \section{Further Optimizations}
@@ -269,3 +291,9 @@ p &= \frac{||x-x_j||}{\sqrt{-\ln{0.01}}}
 
 
 
+\begin{align}
+&&K(x, x_\tau)&=\mathrm{e}^{-\left(\frac{||x-x_\tau||}{p}\right)^2} \\
+&\Leftrightarrow&\ln{K(x, x_\tau)} &= -\left(\frac{||x-x_\tau||}{p}\right)^2 \\
+&\Leftrightarrow& \sqrt{-\ln{K(x, x_\tau)}} &= \frac{||x-x_\tau||}{p} \\
+&\Leftrightarrow& p &= \frac{||x-x_\tau||}{\sqrt{-\ln{K(x, x_\tau)}}}
+\end{align}
