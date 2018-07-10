@@ -288,7 +288,8 @@
   \rlap{\hskip\linenumbersep\hb@xt@\linenumberwidth{\hss\LineNumber}}\hss}% right line number
 \leftlinenumbers% Re-issue [left] option
 \makeatother
-\linenumbers
+
+%\linenumbers
 
 \usepackage{xargs}                      % Use more than one optional parameter in a new commands
 %\usepackage[pdftex,dvipsnames]{xcolor}  % Coloured text etc.
