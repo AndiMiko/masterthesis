@@ -195,7 +195,7 @@ We apply trilinear interpolation together with the hashed grid in our cdfgrid im
     f(\alpha, \beta, \gamma) = a + \alpha\left(b + \beta(e + h\gamma)\right) + \beta(c + f\gamma) + \gamma(d + g\alpha)
 \end{align}
 
-As we do not evaluate this equation directly, but rather construct a interpolated CDF to allow for sublinear sampling later on, we have to provide weights for all eight CDFs. We achieve that by transposing equation~\ref{eq:trilinear} as in equation~\ref{eq:trilinearw}, so that the weight per CDF corresponds to the product of relative coordinates in front of it. In fact, the weight is the volume of the opposing cuboid.
+As we do not evaluate this equation directly, but rather construct a interpolated CDF to allow for sublinear sampling later on, we have to provide weights for all eight CDFs. We achieve that by rearranging equation~\ref{eq:trilinear} as in equation~\ref{eq:trilinearw}, so that the weight per CDF corresponds to the product of relative coordinates in front of it. In fact, the weight is the volume of the opposing cuboid.
 
 
 \begin{align}\label{eq:trilinearw}
@@ -277,7 +277,7 @@ We can now plug in a value for $K(x, x_\tau)$ in equation~\ref{eq:p} to calculat
 p &= \frac{||x-x_\tau||}{\sqrt{-\ln(\eta)}} \label{eq:p0}
 \end{align}
 
-Other approaches to solve continuous smooth local approximation exist, for example the Nadaraya-Watson estimator \cite{nadaraya1964estimating}, which uses a fixed lookup radius instead of nearest neighbours. This suffers from the fact that the choice of the big radius may blur detail, a small radius may not smooth the estimators enough. Still a plethora of other techniques may apply and are worthwhile for further research.
+Other approaches to solve continuous smooth local approximation exist, for example the Nadaraya-Watson estimator \cite{nadaraya1964estimating}, which uses a fixed lookup radius instead of nearest neighbours. This suffers from the fact that the choice of the big radius may blur detail, a small radius may not smooth the estimators enough. Still a plethora of other interpolation/approximation schemes may apply and are worthwhile for further research.
 
 
 \section{Further Considerations}
