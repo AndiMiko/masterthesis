@@ -319,6 +319,9 @@
 \DeclareMathOperator*{\argmax}{arg\,max}
 \DeclareMathOperator*{\argmin}{arg\,min}
 
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}%
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}%
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SPECIAL ZOOM COMMANDS FOR TIKZ SPY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newif\ifblackandwhitecycle
 \gdef\patternnumber{0}

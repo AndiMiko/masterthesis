@@ -2,11 +2,32 @@
 \chapter{Evaluation}
 \label{ch:Evaluation}
 %% ==============
+In this chapter we compare all the techniques we implemented with plain uniform and powerbased Next Event Estimation and with PBRTs implementation. We try to point out the strength and weaknesses of the techniques for certain kind of scenes and scenarios. In this context we mainly argue about image quality, time and memory. We compare time and momery consumtion based on the Mean Squared Error (MSE) metric from equation~\ref{eq:mse}. Where $Y$ is the vector of pixels of length $n$ of our reference image and $\widetilde{Y}_i$ is the vector of pixels of the compared image. 
+
+\begin{align}\label{eq:mse}
+\text{MSE} = \frac{1}{n}\sum_{i=1}^{n}(\abs{Y - \widetilde{Y}_i})^2
+\end{align}
+
+
+We compare based on an equal MSE, therefor the MSE is an estimator for our image quality. When we argue about image quality throughout this chapter we rather refer to the perceived image quality\footnote{The MSE in itself has a perception compontent because of the square. The MSE is a very commonly used estimator, nonetheless one could imagine using a metric which does reflect human perception more closely. This usually leads to problems with subjectivity.}, in our case this usually means whether sensible artifacts are present. As all the compared techniques are unbiased, given unlimited time, all of them would converge to the same image. Artifacts are usually areas or edges which will converge very slowly, in practice maybe never. When we say a technique has a bad image quality, we say that artifacts are present. 
 
 \section{Setup}
 
+The test system used for comparisons throughout this chapter is a i7-4790K CPU @ 4GHz, 32 GB RAM, running on Windows 10 64-Bit. Images are produced by PBRT-v3 forked on March 30\footnote{Latest commit before the fork: \url{https://github.com/mmp/pbrt-v3/commit/42c42c194bab970d8adc3f6b5e3afbbc172c3375}}. PNEE techniques are added on top of this fork, the complete implementation can be found at \url{https://github.com/AndiMiko/pbrt-v3}.
+
 \subsection{Problemcases}
 
+We tried to identify problematic light and object constellations, which are causing trouble for various kinds of techniques. The most prominent and comprehensible scenarios are to be covered bellow. 
+
+\begin{description}
+    \item[High Frequency.] 
+    \item[Level of Detail.]
+    \item[High variantion of light power.] 
+    \item[High number of contributing light sources.]
+    \item[Non-axis aligned planes.]
+    \item[Highly occluding planes.]
+    \item[Tiny but important solid angles.] 
+\end{description} 
 % which problematic setups we have / we can solve
 
 \subsection{Test scenes}

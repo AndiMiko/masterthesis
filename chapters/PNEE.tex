@@ -164,6 +164,9 @@ We don't bother very much for the exact cluster affinity of single photons, thus
 
 Comparing to storing photons we reduced our lookup cost from $\bigO(\log n)$ to $\bigO(\log k)$ and the number of lookups can be significantly lower, as we only care about a smooth interpolation between the CDFs and don't have to worry about missing out on certain light sources. Additionally no hashes have to be computed, instead of a sparse CDF we are constructing an interpolated CDF, which has less overhead attached to it. Nonetheless, we are giving up precision and we are dependent on the quality of our preprocess and interpolation. We discuss interpolating unstructured data points in section \ref{ch:unstructured}.
 
+\subsection{Octree}
+
+...
 
 \section{Interpolation}
 \label{ch:interpolation}
@@ -277,7 +280,7 @@ We can now plug in a value for $K(x, x_\tau)$ in equation~\ref{eq:p} to calculat
 p &= \frac{||x-x_\tau||}{\sqrt{-\ln(\eta)}} \label{eq:p0}
 \end{align}
 
-Other approaches to solve continuous smooth local approximation exist, for example the Nadaraya-Watson estimator \cite{nadaraya1964estimating}, which uses a fixed lookup radius instead of nearest neighbours. This suffers from the fact that the choice of the big radius may blur detail, a small radius may not smooth the estimators enough. Still a plethora of other interpolation/approximation schemes may apply and are worthwhile for further research.
+Other approaches to solve continuous smooth local approximation exist, for example the Nadaraya-Watson estimator \cite{nadaraya1964estimating}, which uses a fixed lookup radius instead of nearest neighbours. This suffers from the fact that the choice of a big radius may blur detail, a small radius may not smooth the estimators enough. Still a plethora of other interpolation/approximation schemes may apply and are worthwhile for further research.
 
 
 \section{Further Considerations}
