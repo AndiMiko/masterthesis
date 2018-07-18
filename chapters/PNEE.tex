@@ -75,6 +75,8 @@ If we want to lessen the strain on the integrator, we might reduce the number of
 \label{ch:normalculling}
 ...
 
+Collecting enough photons ...
+
 \subsection{Lightcut}
 
 Recent work from Estevez and Kulla \cite{Estevez} and Vévoda and Křivánek \cite{Vevoda} rely on lightcuts. A lightcut is a horizontal cut through a lighttree (essentially a binary tree with light sources as leafs) and has the advantage of being very compact when many adjacent leafs of the subtree have the same sampling probability. This is quite typical, as most of the times only a small portion of lights contribute to a given point, while all other lights are shadowed. Let $n$ be the number of lights and $c$ the size of the cut. $c$ can be anything between one, cutting once at the root node, and $n$, cutting each leaf. Lightcuts thus adapt to the complexity of the given datapoint and often can be stored quite compact. Sampling from such a cut runs in $\bigO(\log{n})$ but on avarage in $\bigO(\log{c})$, size of the lighttree is $\bigO(n\log{n})$. The advantages of lightcuts break down when there are none or few adjacent samples that share the same probability. Proposed algorithms by Estevez \cite{Estevez} and others to find such a cut, in our view, have similarities to unsupervised machine learning algorithms, where the lighttree is a dendrogram of a cluster (typically produced by agglomerative hierarchical clustering) and the algorithm tries to assign a label (the probability) to the lights based on their cluster affinity. 

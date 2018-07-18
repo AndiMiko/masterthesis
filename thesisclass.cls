@@ -322,6 +322,8 @@
 \DeclarePairedDelimiter\abs{\lvert}{\rvert}%
 \DeclarePairedDelimiter\norm{\lVert}{\rVert}%
 
+\usepackage{contour}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SPECIAL ZOOM COMMANDS FOR TIKZ SPY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newif\ifblackandwhitecycle
 \gdef\patternnumber{0}
@@ -336,11 +338,7 @@
     black and white/static/.style={ 
         draw=white,   
         zoombox paths/.append style={
-            draw=white,
-            postaction={
-                draw=black,
-                loosely dashed
-            }
+            draw=black
         }
     },
     black and white/static/.code={
@@ -353,11 +351,7 @@
     black and white pattern/.is choice,
     black and white pattern/0/.style={},
     black and white pattern/1/.style={    
-            draw=white,
-            postaction={
-                draw=black,
-                dash pattern=on 2pt off 2pt
-            }
+            draw=black
     },
     black and white pattern/2/.style={    
             draw=white,
@@ -378,6 +372,20 @@
             postaction={
                 draw=black,
                 dash pattern=on 4pt off 2pt on 2 pt off 2pt on 2 pt off 2pt
+            }
+    },
+    black and white pattern/5/.style={    
+            draw=white,
+            postaction={
+                draw=black,
+                dash pattern=on 2pt
+            }
+    },
+    black and white pattern/6/.style={    
+            draw=white,
+            postaction={
+                draw=black,
+                dash pattern=off 2pt
             }
     },
     zoomboxarray inner gap/.initial=5pt,
@@ -493,7 +501,9 @@
         \rule{\imagewidth}{\imageheight}%
     }%
 }
-\newcommand\zoombox[2][]{
+\newcounter{zoombox}
+
+\newcommand\zoombox[2][]{\stepcounter{zoombox}
     \begin{scope}[zoombox paths]
         \pgfmathsetmacro\xpos{
             (\columncount-1)*(\imagewidth / \pgfkeysvalueof{/tikz/zoomboxarray columns} + \pgfkeysvalueof{/tikz/zoomboxarray inner gap} / \pgfkeysvalueof{/tikz/zoomboxarray columns} ) + \pgflinewidth
@@ -509,7 +519,7 @@
             every spy on node/.append style={#1},
             x=\imagewidth,
             y=\imageheight
-        ] on (#2) in node [anchor=north west] at ($(zoomboxes container.north west)+(\xpos pt,-\ypos pt)$);}
+        ] on (#2) in node [anchor=north west] (zoombox-\arabic{zoombox}) at ($(zoomboxes container.north west)+(\xpos pt,-\ypos pt)$);}
         \dospy
         \pgfmathtruncatemacro\pgfmathresult{ifthenelse(\columncount==\pgfkeysvalueof{/tikz/zoomboxarray columns},\rowcount+1,\rowcount)}
         \global\let\rowcount=\pgfmathresult
@@ -521,5 +531,6 @@
         \fi
     \end{scope}
 }
+
 
 %% **** END OF CLASS ****

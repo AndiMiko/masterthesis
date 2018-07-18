@@ -2,10 +2,10 @@
 \chapter{Evaluation}
 \label{ch:Evaluation}
 %% ==============
-In this chapter we compare all the techniques we implemented with plain uniform and powerbased Next Event Estimation and with PBRTs implementation. We try to point out the strength and weaknesses of the techniques for certain kind of scenes and scenarios. In this context we mainly argue about image quality, time and memory. We compare time and momery consumtion based on the Mean Squared Error (MSE) metric from equation~\ref{eq:mse}. Where $Y$ is the vector of pixels of length $n$ of our reference image and $\widetilde{Y}_i$ is the vector of pixels of the compared image. 
+In this chapter we compare all the techniques we implemented with plain uniform and powerbased Next Event Estimation and with PBRTs implementation. We try to point out the strength and weaknesses of the techniques for certain kind of scenes and scenarios. In this context we mainly argue about image quality, time and memory. We compare time and momery consumtion based on the Mean Squared Error (MSE) metric from equation~\ref{eq:mse}. Where $Y_i$ is the vector of pixels of length $n$ of our reference image and $\widetilde{Y}_i$ is the vector of pixels of the compared image. 
 
 \begin{align}\label{eq:mse}
-\text{MSE} = \frac{1}{n}\sum_{i=1}^{n}(\abs{Y - \widetilde{Y}_i})^2
+\text{MSE} = \frac{1}{n}\sum_{i=1}^{n}\abs{Y_i - \widetilde{Y}_i}^2
 \end{align}
 
 
@@ -13,7 +13,7 @@ We compare based on an equal MSE, therefor the MSE is an estimator for our image
 
 \section{Setup}
 
-The test system we used for comparisons is a i7-4790K CPU @ 4GHz, 32 GB RAM, running on Windows 10 64-Bit. Images are produced by PBRT-v3 forked on March 30\footnote{Latest commit before the fork: \url{https://github.com/mmp/pbrt-v3/commit/42c42c194bab970d8adc3f6b5e3afbbc172c3375}}. PNEE techniques are added on top of this fork, the complete implementation can be found at \url{https://github.com/AndiMiko/pbrt-v3}.
+The test machine we used for comparisons is a Intel i7-4790K CPU @ 4GHz, 32 GB RAM, running on Windows 10 64-Bit. Images are produced by PBRT-v3, forked on March 30\footnote{Latest commit before the fork: \url{https://github.com/mmp/pbrt-v3/commit/42c42c194bab970d8adc3f6b5e3afbbc172c3375}}. PNEE techniques are added on top of this fork, the complete implementation can be found at \url{https://github.com/AndiMiko/pbrt-v3}.
 
 \subsection{Problem cases}
 
@@ -32,15 +32,14 @@ We tried to identify problematic light and object constellations, which are caus
 
 \subsection{Test scenes}
 
-We designed a special scene, called \textit{Stanford-Museum}, for most of the comparisons we present in this chapter. This scene covers all aforementioned problem cases and thus gives a good impression about strengths and weaknesses of each technique. The simplicity of the scene allows the reader to clearly correlate variance with the problem cases, but ultimately does not provide a photorealistic appeal. On the other hand we present two more scenes, \textit{bathroom} and \textit{measure-one}, for a comparison on real scenes with all sorts of details.
+We designed a special scene, called \textit{Stanford-Museum}, for most of the comparisons we present in this chapter. This scene covers all aforementioned problem cases and thus gives a good impression about strengths and weaknesses of each technique. The simplicity of the scene allows the reader to clearly correlate variance with the problem cases, but ultimately does not provide a photorealistic appeal. On the other hand we present two more scenes, \textit{City} and \textit{measure-one}, for a comparison on real scenes with all sorts of details.
 
 \paragraph{Stanford-Museum}
-
-We describe the most important problem cases we had in mind when designing the Stanford-Museum scene in figure~\ref{fig:stanfordmuseumref}, which is the reference image we calculate the MSE against. The scene contains 4058 light sources, all of whom are point light sources. We chose point light sources, because sampling a point on a light source is not a concern of PNEE, thus reducing variance from other effects does discloses artifacts produced by our techniques more clearly. We also render the scene with a pathtracer with a max depth parameter of one, again, using the same argument, as depth introduces variance from the indirect lighting term of the pathtracer.
 
 \begin{figure}[ht]\centering
 \input{figures/StanfordMuseum.tex}
 \caption{The reference image for \textit{Stanford-Museum}. }
+\label{fig:stanfordmuseumref}
 \begin{tabular}{|c|cc|ccc|}
 \hline 
 a  & b & c & 1 & 2 & 3 \\\hline
@@ -48,6 +47,18 @@ d  & e & f & 4 & 5 & 6 \\
 g  & h & i & 7 & 8 & 9 \\\hline
 \end{tabular}
 \end{figure}
+
+We describe the most important problem cases we had in mind when designing the Stanford-Museum scene in figure~\ref{fig:stanfordmuseumref}, which is the reference image we calculate the MSE against. The scene contains 4058 light sources, all of whom are point light sources. We chose point light sources, because sampling a point on a area light source is not a concern of PNEE, thus reducing variance from other effects does discloses artifacts produced by our techniques more clearly. We also render the scene with a pathtracer with a max depth parameter of one, again, using the same argument, as depth introduces variance from the indirect lighting term of the pathtracer. Additionally, this makes rendering a nearly perfect reference image possible, by using PBRTs direct lighting integrator, which samples all point light sources for any intersection point. The reference image is rendered with 128 samples per pixel in 17 hours on our test machine.
+
+\paragraph{Measure-one}
+
+
+
+
+\paragraph{City}
+
+
+
 
 \subsection{Techniques}
 
