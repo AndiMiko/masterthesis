@@ -7,22 +7,22 @@ We already introduced many academic techniques we base our work on in the last s
 
 \section{Early work}
 
-Early work on this topic from \cite{Shirley:1996:MCT:226150.226151} introduces the construction of probability density functions (PDF) for simple area light shapes. Sampling within an area light is a problem on it's own, but is well understood for basic shapes. Further, those PDFs can be combined to inherit multiple light sources. \cite{Shirley:1996:MCT:226150.226151} discuss weighting the sampling probability of the light sources uniformly and energy based which produces reasonable results in simple scenes but quickly breaks down with many light sources and occlusion. They further propose a technique to spatially divide the scene with an octree to account for more localized influences. Still calculations remain based on emitted energy % angle? 
+Early work on this topic from \parencite{Shirley:1996:MCT:226150.226151} introduces the construction of probability density functions (PDF) for simple area light shapes. Sampling within an area light is a problem on it's own, but is well understood for basic shapes. Further, those PDFs can be combined to inherit multiple light sources. \parencite{Shirley:1996:MCT:226150.226151} discuss weighting the sampling probability of the light sources uniformly and energy based which produces reasonable results in simple scenes but quickly breaks down with many light sources and occlusion. They further propose a technique to spatially divide the scene with an octree to account for more localized influences. Still calculations remain based on emitted energy % angle? 
 and spatial distance and fail to attribute for any kind of occlusion.
 
 \section{Lightcuts}
 
 \section{Lighttree}
 
-More recent work from \cite{Estevez} is inspired by lightcuts (\cite{Walter2005LightcutsAS}) and proposes the construction of a lighttree. The leafs are light sources which get pooled into clusters by position as well as orientation. Later, to choose a  light source the tree is traversed down until a cluster with a fitting position and normal cone is found. All lights below the found cut are then sampled uniformly or energy based.
+More recent work from \textcite{Estevez} is inspired by lightcuts \parencite{Walter2005LightcutsAS} and proposes the construction of a lighttree. The leafs are light sources which get pooled into clusters by position as well as orientation. Later, to choose a  light source the tree is traversed down until a cluster with a fitting position and normal cone is found. All lights below the found cut are then sampled uniformly or energy based.
 
 \section{Grid caching}
 
-\cite{Vevoda} propose a technique which utilizes a light tree and cuts as well (\cite{Walter2005LightcutsAS}). The scene is subdivided into a regular grid where each cell does hold a cut of the light tree. Similar to \cite{Estevez} this cut can be used to importance sample given light sources. The kicker is that a cut is calculated lazily only when a shading point within an empty cell is rendered. Other shading points within this cell will later reuse the same cut.
+\parencite{Vevoda} propose a technique which utilizes a light tree and cuts as well (\parencite{Walter2005LightcutsAS}). The scene is subdivided into a regular grid where each cell does hold a cut of the light tree. Similar to \parencite{Estevez} this cut can be used to importance sample given light sources. The kicker is that a cut is calculated lazily only when a shading point within an empty cell is rendered. Other shading points within this cell will later reuse the same cut.
 
 \section{Reinforcement learning}
 
-Another recent work from \cite{DBLP:journals/corr/DahmK17} utilizes machine learning. It more generally learns light transport paths by learning a $\mathcal{Q}$-function with reinforcement learning. The $\mathcal{Q}$-functions are distributed in screen space and form a Voronoi diagram which guides sampling.
+Another recent work from \parencite{DBLP:journals/corr/DahmK17} utilizes machine learning. It more generally learns light transport paths by learning a $\mathcal{Q}$-function with reinforcement learning. The $\mathcal{Q}$-functions are distributed in screen space and form a Voronoi diagram which guides sampling.
 
 
 \section{Datastructures}
@@ -31,4 +31,4 @@ Another recent work from \cite{DBLP:journals/corr/DahmK17} utilizes machine lear
 
 \section{Outlook}
 
-Similar problems can be found on work about Instant Radiosity (\cite{keller1997instant} \cite{Walter2005LightcutsAS} \cite{dachsbacher2014scalable}). Due to the large amount of virtual point lights several techniques had been developed to scale sublinearly. We have to consider these techniques with caution, as one of our main goals is to stay unbiased, while most work on Instant Radiosity is dependent on biased approximations.
+Similar problems can be found on work about Instant Radiosity \parencite{keller1997instant, Walter2005LightcutsAS, dachsbacher2014scalable}. Due to the large amount of virtual point lights several techniques had been developed to scale sublinearly. We have to consider these techniques with caution, as one of our main goals is to stay unbiased, while most work on Instant Radiosity is dependent on biased approximations.

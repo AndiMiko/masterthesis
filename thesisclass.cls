@@ -38,7 +38,7 @@
 \usepackage{url}
 \usepackage[absolute,overlay]{textpos}
 \usepackage{tikz}
-\usepackage[english]{babel}
+
 \usepackage{algorithm}		  % Code-Listings
 \usepackage{algorithmic}	  % Code-Listings
 % see http://www.ctan.org/tex-archive/macros/latex/contrib/algorithm2e/algorithm2e.pdf
@@ -57,9 +57,14 @@
 						linkbordercolor={0 0.61 0.50},   
 						citebordercolor={0 0.61 0.50}]{hyperref}  %{0.57 0.74 0.57}
 
-%\usepackage[style=apa]{biblatex}						
-\usepackage[fixlanguage]{babelbib}	% sets german style for literature entries
-\selectbiblanguage{english}			% for \bibliographystyle{babalpha}
+
+\usepackage[american]{babel}
+\usepackage{csquotes}
+\usepackage[style=apa]{biblatex}
+\DeclareLanguageMapping{american}{american-apa}
+
+%\usepackage[fixlanguage]{babelbib}	% sets german style for literature entries
+%\selectbiblanguage{english}			% for \bibliographystyle{babalpha}
 %% --- End of Packages ---
 
 
@@ -67,8 +72,8 @@
 %% | Bugfix for babel/germanb.dtx |
 %% --------------------------------
 %% see: http://www.macrotron.net/babel-hyphens.txt
-\declare@shorthand{german}{"~}{\textormath{\leavevmode\hbox{-}\bbl@allowhyphens}{-}}
-\declare@shorthand{ngerman}{"~}{\textormath{\leavevmode\hbox{-}\bbl@allowhyphens}{-}}
+%\declare@shorthand{german}{"~}{\textormath{\leavevmode\hbox{-}\bbl@allowhyphens}{-}}
+%\declare@shorthand{ngerman}{"~}{\textormath{\leavevmode\hbox{-}\bbl@allowhyphens}{-}}
 
 %% -------------------------------
 %% |        Declarations         |
