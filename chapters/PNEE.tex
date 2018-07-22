@@ -4,7 +4,7 @@
 \label{ch:PNEE}
 %% ==============
 
-We propose a novel approach to find estimators for importance sampling (primarily) for scenes with many local or occluded light sources. Our key goal is to efficiently reduce the variance $\sigma$ (section~\ref{sec:IS}) \unsure{ref to sections?} of the direct lighting term of our Monte Carlo integrator (section~\ref{sec:MC}) by estimating the strength of the light contribution from every light source. Typically ruling out light sources that contribute nothing (zero contribution paths) due to shadowing has a significant impact.
+We propose a novel approach to find estimators for importance sampling (primarily) for scenes with many local or occluded light sources. Our key goal is to efficiently reduce the variance $\sigma$ of the direct lighting term of our Monte Carlo integrator by estimating the strength of the light contribution from every light source. Typically, ruling out light sources that contribute nothing (zero contribution paths) due to shadowing has the most significant impact.
 
 In a preprocess all light sources scatter out photons into the scene, similar to photon mapping \parencite{jensen2001realistic}, but no bounces are considered, as we only need direct light paths for our Next Event Estimation estimator. Further, we only consider LD paths; all LS*D paths are disregarded. Those paths are disregarded by the first condition anyhow, but we want to emphasize that refractions of any kind make a photon obsolete for our use case. After the photons are scattered out into the scene, we are looking for efficient ways to approximate or store those photons. Contrary to techniques like proposed by \textcite{Estevez} where we build up our data structures around the light sources themselves, with PNEE we build the data structures around the light-receiving parts of our scene. This generally scales up the data that needs to be processed but at the same time bears opportunity to refine our estimators. Then, the last step happens from within our path tracer; we produce an estimator for our Next Event Estimation at every intersection by accessing and processing surrounding photons or CDFs.
 
@@ -14,7 +14,7 @@ Note that when the photon count goes towards infinity and the intersection searc
 
 \section{Mix and match}
 
-Throughout this work, we explored several techniques that trade off time, memory and image quality (visible artifacts)\footnote{As all our techniques are unbiased, images always converge against the same result. In practice those artifacts converge almost never, thus we list artifacts, even though they just can be seen as an unproportional time trade-off.}. From a meta-perspective, we can divide our technique into several sub-processes:
+Throughout this work, we explored several techniques that trade off time, memory and image quality (visible artifacts)\footnote{As all our techniques are unbiased, images always converge against the same result. In practice those artifacts converge almost never, thus we list image quality as a metric, even though they just can be seen as an unproportionaly high time trade-off.}. From a meta-perspective, we can divide our technique into several sub-processes:
 
 \begin{itemize}
     \item shoot photons (section~\ref{ch:shootph})
@@ -23,8 +23,7 @@ Throughout this work, we explored several techniques that trade off time, memory
     \item and finally, from within the path tracer, retrieve this information and potentially interpolate it to construct meaningful estimators (section \ref{ch:interpolation})
 \end{itemize}
 
-For each subprocess we present several ideas, where mostly any permutation of those ideas could be utilized. Unsurprisingly, there are several natural fits, which we describe in more detail, have implemented and evaluate against each other and known techniques in section~\ref{ch:Evaluation}. We refer to the implemented techniques as \textit{cdfgrid}, \textit{photontree} and \textit{cdftree}. All of which have specific peculiarities and parameters which are introduced during the course of this work. Table \ref{tb:techniques} gives an overview of sub-techniques and colors indicate which of those are implemented with the respective technique. We advise the reader to refer back to this overview, to put newly introduced techniques into perspective.
-\unsure{good table and styling?}
+For each subprocess we present several ideas, where mostly any permutation of those ideas could be utilized. Unsurprisingly, there are several natural fits, which we describe in more detail, have implemented and evaluate against each other and other known techniques in section~\ref{ch:Evaluation}. We refer to the implemented techniques as \textit{cdfgrid}, \textit{photontree} and \textit{cdftree}. All of which have specific peculiarities and parameters which are introduced during the course of this work. Table \ref{tb:techniques} gives an overview of sub-techniques and colors indicate which of those are implemented with the respective technique. We advise the reader to refer back to this overview, to put newly introduced sub-techniques into perspective.
 
 \begin{center}
 
@@ -50,24 +49,27 @@ importance sampling                                    & CDFs \tdot{yellow}\tdot
 
 \section{Shooting photons}
 \label{ch:shootph}
-The first step in the preprocess is to scatter out photons. We rely on the same theoretical basis as photon mapping (section \ref{sec:PM}) but without producing any kind of bias as long as our CDFs always inherit every light source. We generate photons at the scenes light sources and intersect them with our scene geometry. We sample the light source $x$ and a point s and direction $\omega$ on that light source with respect to a probability distribution. This bears the opportunity to guide the generation of photons to maximize the photon density in the important parts of the scene. Let $L(s,\omega)$ be the radiance \unsure{radiance?} at point s in direction $\omega$, $p(x)$ the probability to sample light source $x$ and $p(\text{s}, \omega)$ the probability to sample the ray; the flux $\beta$ of this photon is calculated as follows.
+The first step in the preprocess is to scatter out photons. We rely on the same theoretical basis as photon mapping (section \ref{sec:PM}) but without producing any kind of bias as long as our CDFs always inherit every light source. We generate photons at the scenes light sources and intersect them with our scene geometry. We sample the light source $x$ and a point s and direction $\omega$ on that light source with respect to a probability distribution. This bears the opportunity to guide the generation of photons to maximize the photon density in the important parts of the scene. Let $L(s,\omega)$ be the radiance at point s in direction $\omega$, $p(x)$ the probability to sample light source $x$ and $p(\text{s}, \omega)$ the probability to sample the ray; the flux $\beta$ of this photon is calculated as follows.
 
 \begin{align}\label{eq:beta}
 \beta = \frac{|\cos{\omega}|L(\text{s}, \omega)}{p(x)p(\text{s}, \omega)}
 \end{align}
 
-The basic approach is to use uniform CDFs to sample both $p(x)$ and $p(\text{s}, \omega)$. We found that results can be greatly enhanced for typical (but not all) scenes by sampling $x$ based on the light power. We elaborate differences in section \ref{ch:}\todo{input section}. In the future, it might be of value to migrate sampling strategies presented for photon mapping to PNEE, see \parencite{DBLP:conf/rt/SuykensW00}\todo{add more}. After we found the first intersection of the photon we check the surface BSDF; if it is fully specular, the photon can be discarded, if it has a diffuse part we store the photon, or at least its origin and $\beta$ in a data structure which we discuss in the next sections.
+ After we found the first intersection of the photon we check the surface BSDF; if it is fully specular, the photon can be discarded, if it has a diffuse part we store the photon, or at least its origin and $\beta$ in a data structure which we discuss in the next sections. Note that sampling the point $s$ within an area light is not a concern of Next Event Estimation; instead, specific techniques exist. The emission on an area light might be given by a texture, for example, importance sampling by power seems intuitive. Another option is to tessellate an area light into smaller area lights; this lessens the strain on selecting $s$ but elevates it for the choice of the light source $x$. This is one scenario where PNEE can shine. Uniformly omitting point light sources are a special case where $p(s,\omega)$ does not play any role, thus point lights are ideal to test our techniques with minimum variance introduced from other matters. We utilize this fact in chapter~\ref{ch:Evaluation}.
 
-\paragraph*{Importance sampling photons}
+\paragraph{Importance sampling photons}
 \label{ch:photonimportancesample}
-...
+
+The basic approach is to use uniform CDFs to sample both $p(x)$ and $p(\text{s}, \omega)$. We found that results can be enhanced for typical (but not all) scenes by sampling $x$ based on the light power. We evaluate differences in section \ref{ch:ev:photonsampling}. It is easy to get a representative photon saturation throughout the scene by just raising the photon count. This works very well with \textit{cdfgrid} because the photon count does not affect the runtime within the integrator, thus importance sampling the photon generation is negligible. Other techniques like \textit{photontree} are very sensible to the photon count, thus a good distribution with as few as possible photons has a critical impact. Mainly for \textit{photontree}, it might be of great value to migrate sampling strategies presented for photon mapping to PNEE, see for example \parencite{DBLP:conf/rt/SuykensW00}\todo{other good references for photon guiding?}.
 
 \section{Form of storage}
 \label{ch:formofstorage}
 
+After a photon hit a surface and we decided to keep it, we have to decide what we want to store. We discuss the trade-offs of several representations in this chapter. 
+
 \subsection{Photons}
 
-Storing every photon with its weight and potentially additional data like the direction it came from is the most precise form to later compute our estimator, as the number of data points corresponds to our photon count. For every intersection point, we evaluate the surrounding photons and compute an individual cumulative distribution function. As the photon count is quite high, typically several million unevenly distributed data points, the lookup is a bottleneck in this case, even with acceleration structures like a k-d tree that we discuss in section~\ref{sec:pneekdtree}. Nonetheless, the approach is worthwhile due to the potential quality of the estimator.
+Storing every photon with its weight and potentially additional data like the direction it came from is the most precise form to later compute our estimator. The number of data points mostly corresponds to our photon count, except for photons which left the scene or hit purely specular surfaces. For every intersection point, we evaluate the surrounding photons and compute an individual cumulative distribution function. As the photon count is quite high, typically several million unevenly distributed data points, the lookup is a bottleneck in this case, even with acceleration data structures like a k-d tree that we discuss in section~\ref{sec:pneekdtree}. Nonetheless, the approach is worthwhile due to the potential quality of the estimator.
 
 If we want to lessen the strain on the integrator, we might reduce the number of data points within the preprocess and store an approximation instead of every individual photon. We accumulate the $\beta$ per light sample $x$ within a defined area. Then this map of weights is transformed into a Lightcut or CDF.
 
