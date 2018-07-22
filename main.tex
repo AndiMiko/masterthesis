@@ -5,15 +5,17 @@
 % ----------------------------------------------------------------
 % No empty in-between chapters, remove this line if desired for double-page printing
 %\let\cleardoublepage\clearpage
+\input{config}
+
 
 %% -------------------------------
 %% |  Information for PDF file   |
 %% -------------------------------
 \hypersetup{
  pdfauthor={Andreas Mikolajewski},
- pdftitle={PNEE},
- pdfsubject={PNEE},
- pdfkeywords={PNEE}
+ pdftitle={Efficient datastructures and sampling of many light sources for Next Event Estimation},
+ pdfsubject={Photon-based Next Event Estimation},
+ pdfkeywords={Computer graphics, photorealism, path tracer, Next Event Estimation}
 }
 
 
@@ -33,14 +35,6 @@
 \newcommand{\timestart}{XX. Monat 20XX}
 \newcommand{\timeend}{XX. Monat 20XX}
 \newcommand{\submissiontime}{DD. MM. 20XX}
-
-%% --------------------------------
-%% | Old Marker - only for draft! |
-%% --------------------------------
-% Remove this section for final version!
-\newenvironment{deprecated}
-{\begin{color}{gray}}
-{\end{color}}
 
 %% --------------------------------
 %% | Settings for word separation |
@@ -68,10 +62,18 @@
 %% |    Including files   |
 %% ------------------------
 % Only files listed here will be included!
-% Userful command for partially translating the document (for bug-fixing e.g.)
-\includeonly{%
+% Useful command for partially translating the document (for bug-fixing e.g.)
+\includeonly{
 titlepage,
-content
+content,
+chapters/introduction,
+chapters/fundamentals,
+chapters/previouswork,
+chapters/PNEE,
+chapters/implementation,
+chapters/evaluation,
+chapters/prospect,
+acronym
 }
 
 
@@ -79,9 +81,6 @@ content
 %% Here, main documents begins %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
-
-% Remove the following line for German text
-%\selectlanguage{ngerman}
 
 \frontmatter
 \pagenumbering{roman}
@@ -102,15 +101,15 @@ content
 %% -----------------
 \mainmatter
 \pagenumbering{arabic}
-\input{chapters/introduction}
-\input{chapters/fundamentals}
-\input{chapters/previouswork}
-\input{chapters/PNEE}
-\input{chapters/implementation}
-\input{chapters/evaluation}
-\input{chapters/prospect}
+\include{chapters/introduction}
+\include{chapters/fundamentals}
+\include{chapters/previouswork}
+\include{chapters/PNEE}
+\include{chapters/implementation}
+\include{chapters/evaluation}
+\include{chapters/prospect}
 
-\input{acronym}
+\include{acronym}
 
 
 %% --------------------
@@ -130,6 +129,6 @@ content
 %\bibliographystyle{IEEEtranSA})
 
 %\printbibliography
-\bibliography{ausarbeitung}
+\bibliography{thesis}
 \Erklaerung
 \end{document}
