@@ -55,12 +55,12 @@ The first step in the preprocess is to scatter out photons. We rely on the same 
 \beta = \frac{|\cos{\omega}|L(\text{s}, \omega)}{p(x)p(\text{s}, \omega)}
 \end{align}
 
- After we found the first intersection of the photon we check the surface BSDF; if it is fully specular, the photon can be discarded, if it has a diffuse part we store the photon, or at least its origin and $\beta$ in a data structure which we discuss in the next sections. Note that sampling the point $s$ within an area light is not a concern of Next Event Estimation; instead, specific techniques exist. The emission on an area light might be given by a texture, for example, importance sampling by power seems intuitive. Another option is to tessellate an area light into smaller area lights; this lessens the strain on selecting $s$ but elevates it for the choice of the light source $x$. This is one scenario where PNEE can shine. Uniformly omitting point light sources are a special case where $p(s,\omega)$ does not play any role, thus point lights are ideal to test our techniques with minimum variance introduced from other matters. We utilize this fact in chapter~\ref{ch:Evaluation}.
+ After we found the first intersection of the photon we check the surface BSDF; if it is fully specular, the photon can be discarded, if it has a diffuse part we store the photon, or at least its origin and $\beta$ in a data structure which we discuss in the next sections. Note that sampling the point $s$ within an area light is not a concern of Next Event Estimation; instead, specific techniques exist. The emission on an area light might be given by a texture, for example, importance sampling by power seems intuitive. Another option is to tessellate an area light into smaller area lights; this lessens the strain on selecting $s$ but elevates it for the choice of the light source $x$. This is one scenario where PNEE can shine. Uniformly omitting point light sources are a special case where $p(s,\omega)$ does not play any role, thus point lights are ideal to test our techniques with minimum variance introduced from other matters. We utilize this fact in our evaluation in chapter~\ref{ch:Evaluation}.
 
 \paragraph{Importance sampling photons}
 \label{ch:photonimportancesample}
 
-The basic approach is to use uniform CDFs to sample both $p(x)$ and $p(\text{s}, \omega)$. We found that results can be enhanced for typical (but not all) scenes by sampling $x$ based on the light power. We evaluate differences in section \ref{ch:ev:photonsampling}. It is easy to get a representative photon saturation throughout the scene by just raising the photon count. This works very well with \textit{cdfgrid} because the photon count does not affect the runtime within the integrator, thus importance sampling the photon generation is negligible. Other techniques like \textit{photontree} are very sensible to the photon count, thus a good distribution with as few as possible photons has a critical impact. Mainly for \textit{photontree}, it might be of great value to migrate sampling strategies presented for photon mapping to PNEE, see for example \parencite{DBLP:conf/rt/SuykensW00}\todo{other good references for photon guiding?}.
+The basic approach is to use uniform CDFs to sample both $p(x)$ and $p(\text{s}, \omega)$. We found that results can be enhanced for typical (but not all) scenes by sampling $x$ based on the light power. We evaluate differences in section \ref{ch:ev:photonsampling}. It is easy to get a representative photon saturation throughout the scene by just raising the photon count. This works very well with \textit{cdfgrid} because the photon count does not affect the runtime within the integrator, thus importance sampling the photon generation is negligible. Other techniques like \textit{photontree} are very sensible to the photon count, thus a good distribution with as few as possible photons has a critical impact. Mainly for \textit{photontree}, it might be of great value to migrate sampling strategies presented for photon mapping to PNEE, see for example \parencite{DBLP:conf/rt/PeterP98, DBLP:conf/rt/SuykensW00, DBLP:journals/vc/ZhengZ15}.
 
 \section{Form of storage}
 \label{ch:formofstorage}
@@ -71,15 +71,16 @@ After a photon hit a surface and we decided to keep it, we have to decide what w
 
 Storing every photon with its weight and potentially additional data like the direction it came from is the most precise form to later compute our estimator. The number of data points mostly corresponds to our photon count, except for photons which left the scene or hit purely specular surfaces. For every intersection point, we evaluate the surrounding photons and compute an individual cumulative distribution function. As the photon count is quite high, typically several million unevenly distributed data points, the lookup is a bottleneck in this case, even with acceleration data structures like a k-d tree that we discuss in section~\ref{sec:pneekdtree}. Nonetheless, the approach is worthwhile due to the potential quality of the estimator.
 
-If we want to lessen the strain on the integrator, we might reduce the number of data points within the preprocess and store an approximation instead of every individual photon. We accumulate the $\beta$ per light sample $x$ within a defined area. Then this map of weights is transformed into a Lightcut or CDF.
-
 \paragraph*{Normal Culling}
 \label{ch:normalculling}
-...
+
+If every photon stores the direction it came from, 
 
 Collecting enough photons ...
 
 \subsection{Lightcut}
+
+If we want to lessen the strain on the integrator, we might reduce the number of data points within the preprocess and store an approximation instead of every individual photon. We accumulate the $\beta$ per light sample $x$ within a defined area. Then this map of weights is transformed into a Lightcut or CDF.
 
 Recent work from Estevez and Kulla \parencite{Estevez} and Vévoda and Křivánek \parencite{Vevoda} rely on Lightcuts. A Lightcut is a horizontal cut through a Lighttree (essentially a binary tree with light sources as leaves) and has the advantage of being very compact when many adjacent leaves of the subtree have the same sampling probability. This is quite typical, as most of the times, only a small portion of lights contribute to a given point, while all other lights are shadowed. Let $n$ be the number of lights and $c$ the size of the cut. $c$ can be anything between one, cutting once at the root node, and $n$, cutting each leaf. Lightcuts thus adapt to the complexity of the given data point and often can be stored quite compact. Sampling from such a cut runs in $\bigO(\log{n})$ but on average in $\bigO(\log{c})$, size of the Lighttree is $\bigO(n\log{n})$. The advantages of Lightcuts break down when there are none or few adjacent samples that share the same probability. Proposed algorithms by Estevez \parencite{Estevez} and others to find such a cut, in our view, have similarities to unsupervised machine learning algorithms, where the Lighttree is a dendrogram of a cluster (typically produced by agglomerative hierarchical clustering), and the algorithm tries to assign a label (the probability) to the lights based on their cluster affinity. 
 
@@ -262,6 +263,14 @@ With this approximation approach, variance holes are smoothed quite well already
 \end{align}
 
 \paragraph{Adaptive confidence weighted Kernel Regression}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{figures/img-placeholder.png}
+    \caption{discontinuity Edges ...}
+    \label{fig:discontinuityEdges}
+\end{figure}
+
 Just like with Shepards interpolation, Kernel Regression is as well a global method in the first place. Using Kernel Regression with only a subset of nearest neighbors does create discontinuities in the approximated function which are visible as variance edges, see figure~\ref{fig:discontinuityEdges}. Applying a similar idea as in modified Shepard, we propose constructing the kernel in such a way, that $p$ adapts the radius of the kernel so that the outmost sample has a zero weight. The Gaussian kernel previously presented (\ref{eq:gaussiankernel}) has no roots; thus we modify the kernel in equation~\ref{eq:modgaussiankernel} by subtracting $\eta \in (0,1)$ to move the kernel down a bit and creating the roots we need, see figure~\ref{fig:KRkernel}. Any choice of $\eta$ does work, a big $\eta$ cuts off the bell curve early, a too small $\eta$ will let the flat part of the bell curve dominate the kernel. We want to preserve most characteristics of the bell curve, thus choosing $\eta$ at around $0.05$ seems intuitive.  As a next step, we have to ensure, that the outmost sample $x_j$ is on the root, by adjusting the kernel radius with the help of $p$. Let $\tau$ be the index of the outmost sample defined as follows. 
 
 \begin{align}
