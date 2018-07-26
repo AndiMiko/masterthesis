@@ -25,13 +25,13 @@ We compare based on an equal MSE, therefor the MSE is an estimator for our image
 \begin{subfigure}[b]{1\textwidth}
    \includegraphics[width=1\linewidth]{figures/examples/StanfordMuseum_pvox_ps512_t503_icdf-0_pc96000k_mc0,1_Vox96_8854.png}
    \caption{Stanford-Museum rendered with 512 samples per pixel with \textit{cdfgrid} and no interpolation.}
-   \label{fig:Ng1} 
+   \label{fig:SMnoInt} 
 \end{subfigure}
 
 \begin{subfigure}[b]{1\textwidth}
    \includegraphics[width=1\linewidth]{figures/examples/StanfordMuseum_pvox_ps512_t723_icdf-1_pc128000k_mc0,1_Vox64_17574.png}
    \caption{Stanford-Museum rendered with 512 samples per pixel with \textit{cdfgrid} and trilinear interpolation.}
-   \label{fig:Ng2}
+   \label{fig:SMInt}
 \end{subfigure}
 
 \caption{A visual comparison of no interpolation vs trilinear interpolation. Even though we already have a rather high sample per pixel count, (a) shows many clear variance edges of the underlying grid cells and various artifacts across the scene. Also it is remarkable how many fireflies are visible and how almost none of them are present in (b). It is quite apparent that a human observer would grade the image quality of (b) much higher, but surprisingly the RMSE of (a) is significantly smaller, $39.8$ versus $47.3$. The reason being, that aside of the fireflies and artifacts, the majority of pixels in (a) are less noisy. The difference in noise is less apparent at first, but is well illustrated on the white/gray wall to the left of the Buddah.}
@@ -112,6 +112,9 @@ We describe the most important problem cases we had in mind when designing the S
 
 \label{ch:ev:photonsampling}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%
+\label{ch:ev:uniformfloor}
 
 % which parameters did we try to configure. Which parameters turned out to be good and will be set as fixed?
 

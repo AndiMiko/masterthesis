@@ -76,6 +76,22 @@ chapters/prospect,
 acronym
 }
 
+\makeatletter
+
+\newrobustcmd*{\parentexttrack}[1]{%
+  \begingroup
+  \blx@blxinit
+  \blx@setsfcodes
+  \blx@bibopenparen#1\blx@bibcloseparen
+  \endgroup}
+
+\AtEveryCite{%
+  \let\parentext=\parentexttrack%
+  \let\bibopenparen=\bibopenbracket%
+  \let\bibcloseparen=\bibclosebracket}
+
+\makeatother
+
 \addbibresource{thesis.bib}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
