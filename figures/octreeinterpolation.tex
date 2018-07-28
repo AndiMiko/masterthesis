@@ -1,0 +1,15 @@
+\begin{tikzpicture}
+  \node[inner sep=0,fit=(current page)] (cp){};
+  \shade[upper left=white,lower left=gray,upper right=white,lower right=cyan]
+  (cp.north west) rectangle +(4cm,-3cm);
+  \shade[upper left=white,lower left=cyan,upper right=yellow,lower right=white]
+  ([xshift=4cm]cp.north west) rectangle +(4cm,-3cm);
+  \shade[upper left=yellow,lower left=white,upper right=gray,lower right=red!50!white]
+  ([xshift=2*4cm]cp.north west) rectangle +(4cm,-3cm);
+  \shade[upper left=gray,lower left=red!50!white,upper right=white,lower right=cyan]
+  ([xshift=3*4cm]cp.north west) rectangle +(4cm,-3cm);
+  \shade[upper left=white,lower left=cyan,upper right=white,lower right=gray]
+  ([xshift=4*4cm]cp.north west) rectangle ([yshift=-3cm]cp.north east);
+
+  \node[font=\Huge\bfseries] at ([yshift=-1.5cm]cp.north) {Hello World!};
+\end{tikzpicture}

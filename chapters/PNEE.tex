@@ -138,7 +138,7 @@ After choosing what we store we are choosing how we store and access it from wit
 \label{ch:pnee:hashedgrid}
 Storing photons directly into a hashed grid is quite dangerous, almost any scene will have clusters of photons, sometimes consisting of a large portion of the total photon count. When doing a nearest neighbor lookup of our intersection point this can degenerate to linear runtime complexity, not even in the light source count $n$, but in the total photon count. It is apparent that this is unacceptable, as even a small detail in the scene could blow up rendering times.
 
-The idea here is to store exactly one CDF in the middle of each grid cell and using the clamped position as the key. Doing so, we utilize the constant access times of the hashed grid without the threat of photon clusters. At the same time, we are giving up precision, as we lose all positional data of the photons. We do not interpolate the photons by the distance to the CDF; rather every photon contributes at the same rate to this homogeneous grid cell. As every intersection point will always choose one specific CDF, this leads to sometimes very apparent variance cliffs at the edges of the grid cells (see figure \ref{fig:SMnoInt}). PBRTs [\citeyear{pbrt}] and \textcite{Vevoda} technique have the exact same problem, but their CDFs transition somewhat smoothly as only position and angles are used for CDF calculation. The problem is highly accelerated with our technique because we inherit occlusion in the CDF generation which can create sharp edges in certain situations. We tackle this problem in section \ref{ch:trilinear}.
+The idea here is to store exactly one CDF in the middle of each grid cell and using the clamped position as the key. Doing so, we utilize the constant access times of the hashed grid without the threat of photon clusters. At the same time, we are giving up precision, as we lose all positional data of the photons. We do not interpolate the photons by the distance to the CDF; rather every photon contributes at the same rate to this homogeneous grid cell. As every intersection point will always choose one specific CDF, this leads to sometimes very apparent variance cliffs at the edges of the grid cells (see figure~\ref{fig:gridNoInt}). PBRTs [\citeyear{pbrt}] and \textcite{Vevoda} technique have the exact same problem, but their CDFs transition somewhat smoothly as only position and angles are used for CDF calculation. The problem is highly accelerated with our technique because we inherit occlusion in the CDF generation which can create sharp edges in certain situations. We tackle this problem in section \ref{ch:trilinear}.
 
 
 \subsection{k-d tree}
@@ -174,6 +174,7 @@ Comparing to storing photons we reduced our lookup cost from $\bigO(\log n)$ to 
 \begin{figure}
     \centering
     \includegraphics[width=0.5\textwidth]{figures/img-placeholder.png}
+    %\input{figures/octreeinterpolation.tex}
     \caption{(a) Naive bilinear interpolation in an Octree. (b) Correct bilinear interpolation in an Octree.}
     \label{fig:trilinearoctree}
 \end{figure}
@@ -186,25 +187,68 @@ A few things have to be considered to make trilinear interpolation work without 
 \section{Interpolation}
 \label{ch:interpolation}
 
-In theory, a completely converged picture would always resemble the real light transport in the scene, one would not have to care about variance edges within the scene (as there is none). In practice, we are trying to find good estimators for our importance sampling to reduce processing time. This might work well for certain parts of the scene, but also has a chance to fail for other parts. If the estimator is bad, we sample the important part so rarely (see figure \ref{fig:importancesample}), that this parts might never, or at least extremely slowly, converge, thus sharp variance edges may occur. When the estimator is good for most parts and only bad on small portions, it might not be captured by the mean squared error to the reference picture, but human perception is quite sensitive to this variance edges, see figure \ref{fig:varianceEdgeCdfgrid}. As variance is the margin between the estimator and the estimated function, variance edges can occur for two reasons, either the estimator does change rapidly, or the scene does change rapidly. Changes of the estimator feel much more unnatural, as we see no apparent reason for those image artifacts, an actual change in the scene (like a hole you are looking through) might not be judged that harshly by a human observer, as the context does change - and with it, the variance\unsure{good?bad?}. With our techniques, we always have some spatially precomputed data packets which constitute a discrete representation of our estimators. When estimators are chosen naively this discrete representation shows with unwanted variance edges. We need interpolation to turn this discrete data packets into a continuous and smooth function of estimators. We can't avoid variance in estimator quality, but we try to make it smooth and unnoticeable.
+In theory, a completely converged picture would always resemble the real light transport in the scene, one would not have to care about variance edges within the scene (as there are none). In practice, we are trying to find good estimators for our importance sampling to reduce processing time. This might work well for certain parts of the scene, but also has a chance to fail for other parts. If the estimator is bad, we sample the important part so rarely (see figure \ref{fig:importancesample}), that this parts might never, or at least extremely slowly, converge, thus sharp variance edges may occur. When the estimator is good for most parts and only bad on small portions, it might not be captured by the mean squared error, but human perception is quite sensitive to this variance edges, see figure \ref{fig:varianceEdgeCdfgrid}. As variance is the margin between the estimator and the estimated function, variance edges can occur for two reasons, either the estimator does change rapidly, or the scene does change rapidly. Changes of the estimator feel much more unnatural, as we see no apparent reason for those image artifacts, an actual change in the scene (like a hole you are looking through) might not be judged that harshly by a human observer, as the context does change---and with it, the variance. With our techniques, we always have some spatially precomputed data packets which constitute a discrete representation of our estimators. When estimators are chosen naively this discrete representation shows with unwanted variance edges. We need interpolation to turn this discrete data packets into a continuous and smooth function of estimators. We can't avoid variance in estimator quality, but we try to make it smooth and unnoticeable.
 
-\begin{figure}[htb] 
-	\centering
-    \input{figures/varianceEdgeCdfgrid.tex}
-    \caption{\textit{Cdfgrid} without interpolation. Even though most of the image is well converged, (b) shows clear variance edges. The CDF construction is dominated by the photons in the darker area, where it works well. As the lighting changes rapidly, the used CDF becomes a bad estimator.} 
-    \label{fig:varianceEdgeCdfgrid}
-\end{figure}
+%\begin{figure}[htb] 
+%	\centering
+%    \input{figures/varianceEdgeCdfgrid.tex}
+%    \caption{\textit{Cdfgrid} without interpolation. Even though most of the image is well converged, (b) shows clear variance edges. The CDF construction is dominated by the photons in the darker area, where it works well. As the %lighting changes rapidly, the used CDF becomes a bad estimator.} 
+%    \label{fig:varianceEdgeCdfgrid}
+%\end{figure}
 
 With our techniques we either collect photons or CDFs, for both methods interpolation is needed, for slightly different reasons. For photons, it does not make sense to only sample one photon; it would imply this shading point would always sample precisely this one light source\footnote{Not exactly, the uniform part of the sparse CDF always contains all light samples with a small probability. Otherwise, we would introduce bias.}. We have to collect a bigger set of photons to represent a proper probability distribution of light sources in this area. As this sets get bigger interpolation gets less important because for adjacent pixels only a small subset of collected photons change, thus the probabilities and resulting variance changes insignificantly. As we lower the subset to speed up the process, interpolation gets much more important, as individual photons have a higher influence.
 
-With CDFs, one might expect considering only the closest CDF might be enough, as a CDF already contains a probability representation for all lights. This might be true for cases when occlusion is not taking into account when the CDFs are calculated. As PBRTs implementation (section \ref{ch:prev:pbrt}) does demonstrate, CDFs are only calculated by distances and angles, due to their spatial correlation adjacent CDFs are similar to each other, thus variance edges are often not noticeable, but still occur, as figure \ref{fig:spatialedge} shows. In that sense, their estimator function is still discrete, but adjacent estimators are by design similar to each other most of the time. This is not true anymore when occlusion is factored in. A single object between two adjacent CDFs could completely change their registered photons. Sampling only the nearest neighbor does result in a very noticeable Voronoi diagram, see figure \ref{fig:voronoi}. This can only be solved by interpolation, which generally increases overall variance, but removes those unwanted edges.
+With CDFs, one might expect considering only the closest CDF might be enough, as a CDF already contains a probability representation for all lights. This might be true for cases when occlusion is not taking into account when the CDFs are calculated. As PBRTs implementation does demonstrate, CDFs are only calculated by distances and angles, due to their spatial correlation adjacent CDFs are similar to each other, thus variance edges are often not noticeable, but still occur, as figure \ref{fig:spatialedge} shows. In that sense, their estimator function is still discrete, but adjacent estimators are by design similar to each other most of the time. This is not true anymore when occlusion is factored in. A single object between two adjacent CDFs could completely change their contributing photons. Sampling only the nearest neighbor does result in a very noticeable Voronoi diagram, see figure \ref{fig:voronoi}. This can only be solved by interpolation, which generally removes those unwanted edges by smoothing them at the cost of an increase of overall variance.
 
-The choice which interpolation method can be used highly depends on the fact whether the structure of the data points is known and which structure it has. Interpolating with structured data, especially with a uniform grid, is comparatively fast and easy. We discuss our approach for this case in the following section. For unstructured data, either photons or CDFs, interpolation is harder to achieve without creating artifacts. We considered precomputing a 3D-Delaunay triangulation and applying local interpolation methods, which only makes sense for CDFs, but algorithms like Bowyer-Watson wouldn't scale well enough for our needs. Additionally, our results indicated, that interpolating within a tetrahedral with only four CDFs, wouldn't mask outlier CDFs well enough. We instead discuss modified global interpolation methods in section \ref{ch:unstructured}. Nonetheless, we acknowledge that there are more interpolation methods or kernels that might be worth to explore.
+\begin{figure}
+    \centering
+    \begin{subfigure}{.5\textwidth}
+      \centering
+      \includegraphics[width=0.9\textwidth]{figures/img-placeholder.png}
+      \caption{}
+      \label{fig:varianceEdgeCdfgrid}
+    \end{subfigure}%
+    \begin{subfigure}{.5\textwidth}
+      \centering
+      \includegraphics[width=0.9\textwidth]{figures/img-placeholder.png}
+      \caption{}
+      \label{fig:gridNoInt}
+    \end{subfigure}
+    \begin{subfigure}{.5\textwidth}
+      \centering
+      \includegraphics[width=0.9\textwidth]{figures/img-placeholder.png}
+      \caption{}
+      \label{fig:spatialedge}
+    \end{subfigure}%
+    \begin{subfigure}{.5\textwidth}
+      \centering
+      \includegraphics[width=0.9\textwidth]{figures/img-placeholder.png}
+      \caption{}
+      \label{fig:voronoi}
+    \end{subfigure}
+    \begin{subfigure}{.5\textwidth}
+      \centering
+      \includegraphics[width=0.9\textwidth]{figures/img-placeholder.png}
+      \caption{}
+      \label{fig:discontinuityEdges}
+    \end{subfigure}%
+    \begin{subfigure}{.5\textwidth}
+      \centering
+      \includegraphics[width=0.9\textwidth]{figures/img-placeholder.png}
+      \caption{}
+      \label{fig:varianceHoles}
+    \end{subfigure}
+    \caption{Various kinds of visible variance edges that we intend to solve throughout this chapter. \\ (a) \textit{cdfgrid} without interpolation. Even though most of the image is well converged, small corner artifacts are apparent. The CDF construction is dominated by the photons in the darker area, where it works well. As the lighting changes rapidly, the used CDF becomes a bad estimator. \\ (b) Common variance edges in \textit{cdfgrid} without interpolation. \\(c) Much less common variance edges in PBRTs \textit{spatial}. \\(d) Voronoi cells when only one nearest neighbor is queried with \textit{cdftree}. \\(e) \textit{cdftree} and \textit{photontree}. Global interpolation used with only an limited number of local neighbors. Variance edges show because the outmost neighbor snaps.
+    \\(f) Variance holes caused by a peak in the interpolation towards a badly constructed CDF. \\ split this figure up maybe?}
+\end{figure}
+
+
+The choice which interpolation method can be used highly depends on the fact whether the structure of the data points is known and which structure it has. Interpolating with structured data, especially with a uniform grid, is comparatively fast and easy. We discuss our approach for this case in the following section. For unstructured data, either photons or CDFs, interpolation is harder to achieve without creating artifacts. We considered precomputing a 3D-Delaunay triangulation and applying local interpolation methods, which only makes sense for CDFs, but algorithms like Bowyer-Watson wouldn't scale well enough for our needs. Additionally, our results indicated, that interpolating within a tetrahedral with only four CDFs, wouldn't mask outlier CDFs well enough. We instead discuss modified global interpolation methods in section \ref{ch:unstructured}. Nonetheless, we acknowledge that there are more interpolation methods and or kernels that might be worth to explore.
 
 \subsection{Structured data - Trilinear interpolation}
 \label{ch:trilinear}
 
-We apply trilinear interpolation together with the hashed grid in our cdfgrid implementation. Each cell in our hashed grid has 26 neighbors in three dimensions. Based on the shading points location we choose seven neighbors, additionally to the cell itself, to get the eight CDFs $a,b,c,d,e,f,g,h$ at the vertice points with combinations of the coordinates $x_i, x_{i+1}, y_i, y_{i+1}, z_i, z_{i+1}$. Together with the relative coordinates $\alpha, \beta, \gamma$, an interpolation can be calculated with equation~\ref{eq:trilinear} (see also section~\ref{ch:fu:trilinear}).
+We apply trilinear interpolation together with the hashed grid in our cdfgrid implementation. Each cell in our hashed grid has 26 neighbors in three dimensions. Based on the shading points location we choose seven neighbors, additionally to the cell itself, to get the eight CDFs $a,b,c,d,e,f,g,h$ at the vertice points with combinations of the coordinates $x_i, x_{i+1}, y_i, y_{i+1}, z_i, z_{i+1}$ \unsure{is this sloppy? Should I explicitly write them down? Any better notation?}. Together with the relative coordinates $\alpha, \beta, \gamma$, an interpolation can be calculated with equation~\ref{eq:trilinear} (see also section~\ref{ch:fu:trilinear}).
 
 \begin{align}
     \alpha = \frac{x-x_i}{x_{i+1}-x_i}, \qquad \beta = \frac{y-y_i}{y_{i+1}-y_i}, \qquad \gamma = \frac{z-z_i}{z_{i+1}-z_i}
@@ -213,7 +257,7 @@ We apply trilinear interpolation together with the hashed grid in our cdfgrid im
     f(\alpha, \beta, \gamma) = a + \alpha\left(b + \beta(e + h\gamma)\right) + \beta(c + f\gamma) + \gamma(d + g\alpha)
 \end{align}
 
-As we do not evaluate this equation directly, but rather construct an interpolated CDF to allow for sublinear sampling, later on, we have to provide weights for all eight CDFs. We achieve that by rearranging equation~\ref{eq:trilinear} as in equation~\ref{eq:trilinearw}, so that the weight per CDF corresponds to the product of relative coordinates in front of it. In fact, the weight is the volume of the opposing cuboid.
+As we do not evaluate this equation directly, but rather construct an interpolated CDF to allow for sublinear sampling later on, we have to provide weights for all eight CDFs. We achieve that by rearranging equation~\ref{eq:trilinear} as in equation~\ref{eq:trilinearw}, so that the weight per CDF corresponds to the product of relative coordinates in front of it. In fact, the weight is the volume of the opposing cuboid (see figure~\ref{fig:bilinear}).
 
 
 \begin{align}\label{eq:trilinearw}
@@ -223,37 +267,75 @@ As we do not evaluate this equation directly, but rather construct an interpolat
     &+ \alpha\beta\gamma g  \notag
 \end{align}
 
-\todo{Smooth Step ...}
+\paragraph{Non-linear interpolation}
+Instead of linear interpolation the function can be curved to make transitions between edges even smoother. A commonly used function is smooth step (equation~\ref{eq:smoothstep}) or even smoother step (equation~\ref{eq:smootherstep}) \parencite{ebert2003texturing}. Using a Hermite polynomial the slope of the smoothstep function is zero at both edges (see figure~\ref{fig:smoothstep}).
+
+\begin{align}
+    \text{smoothstep}(x) =& 
+    \begin{dcases}
+        0& x \leq 0\\
+        3x^2 - 2^3 \qquad \qquad ~& 0 \leq x \leq 1 \\
+        1& 1 \leq x
+    \end{dcases} \label{eq:smoothstep} \\ \notag
+    \\ 
+    \text{smootherstep}(x) =&
+    \begin{dcases}
+        0& x \leq 0\\
+        6x^5 - 15x^4 + 10x^3& 0 \leq x \leq 1 \\
+        1& 1 \leq x
+    \end{dcases}
+    \label{eq:smootherstep}
+\end{align}
+
+Both smooth step functions smooth the edges but concentrate energy towards the middle of the function. We tried them and surprisingly both function yielded worse results than just linear interpolation. Hence we kept using linear interpolation which was already yielding excellent results for most cases.
+
+\begin{figure}[htbp] 
+	\centering
+	\tiny
+    \includesvg[width=0.47\textwidth]{figures/Smoothstep_and_Smootherstep}
+    \caption{linear, smoothstep and smootherstep plot. } 
+    \label{fig:smoothstep}
+\end{figure}
 
 \subsection{Unstructured data - Shepard interpolation}
 \label{ch:unstructured}
 
-Throughout this chapter we argue mostly about interpolating CDFs, most logic can be applied to photons in the same or simpler fashion. The most common method to do global interpolation on unstructured data are Radial Basis Functions (RBF). We considered using RBFs but found that not only scaling is an issue, but as our function values are N-dimensional CDFs, we were not able to precompute meaningful weights\unsure{maybe just leave that out? Is this correct?}. Also, with RBFs, all data points have to be evaluated for a correct result, which is not possible, as we query only some nearest neighbors. Another common approach is to use Shepard interpolation to interpolate $\widetilde{f}(x)$ from data points at $x_k \in N$ with its corresponding values $f(x_k)$. 
+Throughout this section we argue mostly about interpolating CDFs, though most logic can be applied to photons in the same or simpler fashion. The most common method to do global interpolation on unstructured data are Radial Basis Functions (RBF). We considered using RBFs but found that not only scaling is an issue, but as our function values are N-dimensional CDFs, we were not able to apply RBFs\unsure{maybe just leave that out? Is this correct?}. Also, with RBFs, all data points have to be evaluated for a correct result, which is not possible, as we query only some nearest neighbors. Another common approach is to use Shepard interpolation to interpolate $\widetilde{f}(x)$ \unsure{In previous sections I denoted $\chi$ as the intersection point, in this section I use $x$ which is the common notation for interpolation formulas. Should I use $\chi$ which makes the context more clear or $x$ which is a more common notation?} from data points at $x_k \in N$ with its corresponding values $f(x_k)$. 
 
 \begin{align}\label{eq:shepard}
 \widetilde{f}(x) = \sum_{k}^{N}\frac{w_k(x)}{\sum\nolimits_{j}w_j(x)}f(x_k)
 \end{align}
 
-The weight $w_k(x)$ is then only calculated based on distance. A standard approach is to use the inverse distance weight (\ref{eq:inverseDistance}), with parameter $p > 0$ which can be used to smooth the interpolation and $d(x, x_j)$ which is the distance metric (euclidean distance in our case).
+The weight $w_k(x)$ is then only calculated based on distance. A standard approach is to use the inverse distance weight (\ref{eq:inverseDistance}), with parameter $p > 0$ which can be used to smooth the interpolation and $d(x, x_j)$ which is a distance metric (euclidean distance in our case).
 
 \begin{align}\label{eq:inverseDistance}
 w_j(x) = \frac{1}{d(x, x_j)^p}
 \end{align}
 
+
 \paragraph{Modified Shepard method}
 \label{ch:modshep}
 
-In fact, Shepard interpolation is meant to be used as a global interpolation just like RBFs. Opposed to RBFs you can use inverse distance weight locally, the function is still interpolated, but loses its continuity, as seen in figure~\ref{fig:lostContinuity}. The reason is, that as you progress through the interpolated function, the outmost nearest neighbor will sometimes snap to another one. With an increasing amount of nearest neighbors, the outmost data point loses significance, so the effect becomes less noticeable. However, continuity can be restored with the modified Shepard method \todo{add cites} where $w_j(x)$ is constructed in such a way, that the outmost nearest neighbor always fades out to zero (equation~\ref{eq:modshep}); therefore the function does not snap when the outmost data value changes.
+
+In fact, Shepard interpolation is meant to be used as a global interpolation just like RBFs. Opposed to RBFs you can use inverse distance weight locally, the function is still interpolated, but loses its continuity, as seen in figure~\ref{fig:shepmodshepkradkreg}. The reason is, that as you progress through the interpolated function, the outmost nearest neighbor will sometimes snap to another one. With an increasing amount of nearest neighbors, the outmost data point loses significance, so the effect becomes less noticeable. However, continuity can be restored with the modified Shepard method \parencite{franke1980smooth, DBLP:conf/siggraph/AnjyoLP14} where $w_j(x)$ is constructed in such a way, that the outmost nearest neighbor always fades out to zero (equation~\ref{eq:modshep}); therefore the function does not snap when the outmost data value changes.
 
 \begin{align}\label{eq:modshep}
 w_j(x) = \left[ \frac{ r - d(x, x_i)}{ rd(x, x_i) } \right]^2
 \end{align}
 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{figures/img-placeholder.png}
+    \caption{Comparison of Shepard Interpolation, Modified Shepard method, Kernel Regression and Adaptive Kernel Regression}
+    \label{fig:shepmodshepkradkreg}
+\end{figure}
+
+
 \paragraph{Kernel Regression}
 
-Modified Shepard can be successfully used for smooth local interpolation, but inverse distance weighting still has a drawback with our scenario. As $d(x, x_i)$ goes to zero, $w_j(x)$ goes to infinity, this is not only a small implementation problem, but it also creates peaks so that there is always a shading point where a single CDF dominates. This is in fact needed for interpolation and is completely fine for most cases, but we found that in some cases we construct a bad CDF and interpolation with other CDFs won't help at this extreme point, thus leading to variance holes as seen in figure~\ref{fig:varianceHoles}. The only possibility to achieve a smooth appeal is to give up on exact interpolation, but rather approximate the function at the cost of minimally higher overall variance. In fact, approximation is what we wanted in the first place, as our underlying CDFs are approximations already, thus strictly interpolating to them is not necessarily meaningful in the first place.
+Modified Shepard can be successfully used for smooth local interpolation, but inverse distance weighting still has a drawback with our scenario. As $d(x, x_i)$ goes to zero, $w_j(x)$ goes to infinity, this is not only a minor numerical implementation problem, but it also creates peaks so that there is always a shading point where a single CDF dominates. This is in fact needed for interpolation and is completely fine for most cases, but we found that in some cases we construct a bad CDF and interpolation with other CDFs won't help at this extreme point, thus leading to variance holes as seen in figure~\ref{fig:varianceHoles}. The only possibility to achieve a smooth appeal is to give up on exact interpolation, but rather approximate the function at the cost of minimally higher overall variance. In fact, approximation is what we wanted in the first place, as our underlying CDFs are approximations already, thus strictly interpolating to them is not necessarily meaningful in the first place.
 
-A generalization of Shepard interpolation is Kernel Regression (\ref{eq:kernelreg}), where $K(x, x_j)$ is an arbitrary kernel, which opposed to $w_j(x)$ has not to go to infinity when the distance goes to zero, and thus $\widetilde{f}(x)$ approximates instead of interpolates. 
+A generalization of Shepard interpolation is Kernel Regression (equation~\ref{eq:kernelreg}) \parencite{DBLP:conf/siggraph/AnjyoLP14}, where $K(x, x_j)$ is an arbitrary kernel, which opposed to $w_j(x)$ has not to go to infinity when the distance goes to zero, and thus $\widetilde{f}(x)$ approximates instead of interpolates. 
 
 \begin{align}\label{eq:kernelreg}
 \widetilde{f}(x) = \sum_{k}^{N}\frac{K(x,x_k)}{\sum\nolimits_{j}K(x, x_j)}f(x_k)
@@ -267,29 +349,24 @@ K(x, x_j) = \mathrm{e}^{-\left(\frac{||x-x_j||}{p}\right)^2}
 
 \paragraph{Confidence weighted Kernel Regression}
 \label{ch:ckernelreg}
-With this approximation approach, variance holes are smoothed quite well already. We found that a similar amount of photons constructed most CDFs, but note that there are outliers. Those outliers mostly, but not always were assigned just very few photons by the k-d tree clustering. As such one more way to further smooth the image and weaken those outliers is to add a confidence weight $\omega_k$ into Kernel Regression (\ref{eq:ckernelreg}). $\omega_k$ is the number of photons that were used to construct the CDF at $x_k$. The same weight is used with Shepard interpolation accordingly.
+With this approximation approach, variance holes are smoothed quite well already. We found that a similar amount of photons constructed most CDFs, though there are outliers. Those outliers mostly, but not always were assigned just very few photons by the k-d tree clustering. As such one more way to further smooth the image and weaken those outliers is to add a confidence weight $\lambda_k$ into Kernel Regression. $\lambda_k$ is the number of photons that were used to construct the CDF at $x_k$. The same weight can be used with Shepard interpolation accordingly for confidence weighted Shepard interpolation.
 
 \begin{align}\label{eq:ckernelreg}
-\widetilde{f}(x) = \sum_{k}^{N}\frac{K(x,x_k)}{\sum\nolimits_{j}K(x, x_j)}\omega_kf(x_k)
+\widetilde{f}(x) = \sum_{k}^{N}\frac{K(x,x_k)}{\sum\nolimits_{j}K(x, x_j)}\lambda_kf(x_k)
 \end{align}
 
 \paragraph{Adaptive confidence weighted Kernel Regression}
 \label{ch:adckernelreg}
-\begin{figure}
-    \centering
-    \includegraphics[width=0.5\textwidth]{figures/img-placeholder.png}
-    \caption{discontinuity Edges ...}
-    \label{fig:discontinuityEdges}
-\end{figure}
 
-Just like with Shepards interpolation, Kernel Regression is as well a global method in the first place. Using Kernel Regression with only a subset of nearest neighbors does create discontinuities in the approximated function which are visible as variance edges, see figure~\ref{fig:discontinuityEdges}. Applying a similar idea as in modified Shepard, we propose constructing the kernel in such a way, that $p$ adapts the radius of the kernel so that the outmost sample has a zero weight. The Gaussian kernel previously presented (\ref{eq:gaussiankernel}) has no roots; thus we modify the kernel in equation~\ref{eq:modgaussiankernel} by subtracting $\eta \in (0,1)$ to move the kernel down a bit and creating the roots we need, see figure~\ref{fig:KRkernel}. Any choice of $\eta$ does work, a big $\eta$ cuts off the bell curve early, a too small $\eta$ will let the flat part of the bell curve dominate the kernel. We want to preserve most characteristics of the bell curve, thus choosing $\eta$ at around $0.05$ seems intuitive.  As a next step, we have to ensure, that the outmost sample $x_j$ is on the root, by adjusting the kernel radius with the help of $p$. Let $\tau$ be the index of the outmost sample defined as follows. 
+Just like with Shepards interpolation, Kernel Regression is as well a global method in the first place. Using Kernel Regression with only a subset of nearest neighbors does create discontinuities in the approximated function which are visible as variance edges, see figure~\ref{fig:shepmodshepkradkreg} and~\ref{fig:discontinuityEdges}. Applying a similar idea as in modified Shepard, we propose constructing the kernel in such a way, that $p$ adapts the radius of the kernel so that the outmost sample has a zero weight. The Gaussian kernel previously presented (\ref{eq:gaussiankernel}) has no roots; thus we modify the kernel in equation~\ref{eq:modgaussiankernel} by subtracting a constant $\eta \in (0,1)$ to move the kernel down a bit and creating the roots we need. %, see figure~\ref{fig:KRkernel}. 
+Any choice of $\eta$ does work, a big $\eta$ cuts off the bell curve early, a too small $\eta$ will let the flat part of the bell curve dominate the kernel. We want to preserve most characteristics of the bell curve, thus choosing $\eta$ at around $0.01$ seems intuitive.  As a next step, we have to ensure, that the outmost sample $x_j$ is on the root, by adjusting the kernel radius with the help of $p$. Let $\tau$ be the index of the outmost sample defined as follows. 
 
 \begin{align}
 \label{eq:tau}
 \tau = \argmax_j ||x - x_j||
 \end{align}
 
-Plug in the outmost sample $x_\tau$ into equation~\ref{eq:modgaussiankernel} and then rearrange it for the variable $p$ (\ref{eq:p}). 
+Plug in \unsure{Plug in? Substitute? better words?} the outmost sample $x_\tau$ into equation~\ref{eq:modgaussiankernel} and then rearrange it for the variable $p$ (\ref{eq:p}). 
 
 \begin{align}
 &&K(x, x_\tau)&=\mathrm{e}^{-\left(\frac{||x-x_\tau||}{p}\right)^2} - \eta \label{eq:modgaussiankernel} &&\\
