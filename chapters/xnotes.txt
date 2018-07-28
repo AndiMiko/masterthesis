@@ -66,6 +66,8 @@ compare against ps instead time, because time will amortize when other effects m
 
 Notation var/MSE?
 
+Conflicting notations in notation list?
+
 
 read
 Approximate K-Means++ in Sublinear Time

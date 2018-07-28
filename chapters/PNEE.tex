@@ -98,17 +98,17 @@ Another possibility is to directly store cumulative distribution functions durin
     \label{fig:sparseCDF}
 \end{figure}
 
-We need a CDF where only particular values from $0$ to $n$ may be sampled. We achieve this by using a classic CDF (the inner CDF) with length $k$ and a hashmap which maps values $[1,k]\to [1,n]$.\footnote{As the preimage in $[1,k]\to [1,n]$ is a sequence this could also be a simple array instead of a hashmap. Before constructing the sparse CDF, the photons are collected by some algorithm without knowing $k$ beforehand. As photons can originate from all $n$ light sources, a hashmap is needed anyhow. We continue with this hashmap to spare the conversion.} After we sampled a number, the hashmap will map the sampled number to the original sample number. Further, we also need a backmap which is the reverse of the former map. The backmap is used when you want to query the probability of a given original sample number $x$. The original sample number is mapped to the sample number that it corresponds to in the inner CDF so that the inner CDF can be queried for the corresponding probability. We additionally want to provide a base floor probability $b$, which is split equally by all $n$ light sources. Let $N$ be the set of all $n$ sample numbers and $K$ be the set of non-zero probability samples. The probability that a given sample $x$ is sampled by the sparse CDF is given as follows.
+We need a CDF where only particular values from $0$ to $n$ may be sampled. We achieve this by using a classic CDF (the inner CDF) with length $k$ and a hashmap which maps values $[1,k]\to [1,n]$.\footnote{As the preimage in $[1,k]\to [1,n]$ is a sequence this could also be a simple array instead of a hashmap. Before constructing the sparse CDF, the photons are collected by some algorithm without knowing $k$ beforehand. As photons can originate from all $n$ light sources, a hashmap is needed anyhow. We continue with this hashmap to spare the conversion.} After we sampled a number, the hashmap will map the sampled number to the original sample number. Further, we also need a backmap which is the reverse of the former map. The backmap is used when you want to query the probability of a given original sample number $x$. The original sample number is mapped to the sample number that it corresponds to in the inner CDF so that the inner CDF can be queried for the corresponding probability. We additionally want to provide a base floor probability $b$, which is split equally by all $n$ light sources. Let $\mathcal{N}$ be the set of size $n$ containing all sample numbers and $\mathcal{K}$ be the set of non-zero probability samples. The probability that a given sample $x$ is sampled by the sparse CDF is given as follows.
 \begin{align}\label{eq:psparse}
  p_{\text{sparse}}(x) = 
 \begin{dcases}
-    p_{\text{inner}}(\text{backmap}(x))(1 - b) + \frac{b}{n},& \text{if } x \in K\\
+    p_{\text{inner}}(\text{backmap}(x))(1 - b) + \frac{b}{n},& \text{if } x \in \mathcal{K}\\
     \frac{b}{n}, & \text{otherwise}
 \end{dcases}
 \end{align}
 Even though we seemingly introduce unnecessary variance with this uniform base, it is crucial as we otherwise would introduce bias whenever our estimator would \enquote{forget} a light source, which is not uncommon for example very distant or highly occluded light sources. Apart from that fact, it generally helps in areas where our estimator is bad for any reason; therefore the choice of $b$ should not be minimal, but rather roughly proportional to the expected quality of the estimator. We evaluate the choice of $b$ (uniform floor parameter) in section~\ref{ch:ev:uniformfloor}.
 
-Construction is done in $\bigO(k)$ space and time, sampling in $\bigO(\log{k})$. Comparing to Lightcuts, we have a simpler data structure in hand, which rules out non contributing light samples effectively. If we assume that equal non-zero probabilities are rare, which should be the case with many photon contributions, we generally should outperform Lightcuts, especially because sampling the dominant case $x \notin K$ runs in $\bigO(1)$. Nonetheless, sparse CDFs are in fact just a special case of Lightcuts slightly optimized for our anticipated most probable case; Lightcuts are still easily applicable for other cases. 
+Construction is done in $\bigO(k)$ space and time, sampling in $\bigO(\log{k})$. Comparing to Lightcuts, we have a simpler data structure in hand, which rules out non contributing light samples effectively. If we assume that equal non-zero probabilities are rare, which should be the case with many photon contributions, we generally should outperform Lightcuts, especially because sampling the dominant case $x \notin \mathcal{K}$ runs in $\bigO(1)$. Nonetheless, sparse CDFs are in fact just a special case of Lightcuts slightly optimized for our anticipated most probable case; Lightcuts are still easily applicable for other cases. 
 
 \subsubsection{Interpolated CDF}
 \label{sec:intcdf}
@@ -205,7 +205,7 @@ With CDFs, one might expect considering only the closest CDF might be enough, as
     \centering
     \begin{subfigure}{.5\textwidth}
       \centering
-      \includegraphics[width=0.9\textwidth]{figures/img-placeholder.png}
+      \adjincludegraphics[width=0.9\textwidth, trim={{.07\width} {.55\height} {.73\width} {.25\height}},clip]{figures/test2_artifacts.png}
       \caption{}
       \label{fig:varianceEdgeCdfgrid}
     \end{subfigure}%
@@ -408,3 +408,18 @@ One way to conquer this issue is to let the system learn and decide on the param
 \end{description}
 
 \subsection{Adaptive importance weight for MIS}
+
+Just like other areas of Monte Carlo integration benefit from multiple importance sampling we see similar potential for PNEE and other techniques like PBRTs. The increase in quality is achieved by mixing the strengths of different estimators. Let $n$ be the number of importance sampling strategies, $N_i$ the number of samples for strategy $i$ and $p_i$ the density of the $i$'th strategy. MIS is applied as follows.
+
+\begin{align}
+F = \sum_{i=1}^{n}\sum_{j=1}^{N_i}\frac{w_i(x_j)f(x_j)}{N_i \cdot p_i(x_j)}
+\label{eq:mis}
+\end{align}
+
+We see potential distinctive synergy with PNEE, as we might have a good indication of the quality of our estimators through for example the photon count, similar to the confidence weight $\lambda$ introduced in section~\ref{ch:adckernelreg}. This confidence could be incorporated to adaptively choose either the number of samples $N_i$ or calculate $w_i(x_j)$ accordingly. The choice of $w_i(x_j)$ can be either fixed or the usually better option is to use the so-called power heuristic (equation~\ref{eq:powerheuristic})\parencite{veach1997robust}. The choice of $\beta \geq 1$ further amplifies the confidence of important samples within $p_i$. This behavior should again have good synergy with PNEE.
+
+
+\begin{align}
+w_i(x_j) = \frac{N_i \cdot p_i(x_j)^\beta}{\sum_{k=1}^{n} N_k \cdot p_k(x_j)^\beta}
+\label{eq:powerheuristic}
+\end{align}
