@@ -39,8 +39,8 @@
 \usepackage[absolute,overlay]{textpos}
 \usepackage{tikz}
 
-\usepackage{algorithm}		  % Code-Listings
-\usepackage{algorithmic}	  % Code-Listings
+%\usepackage{algorithm}		  % Code-Listings
+%\usepackage{algorithmic}	  % Code-Listings
 % see http://www.ctan.org/tex-archive/macros/latex/contrib/algorithm2e/algorithm2e.pdf
 % for more sophisticated algorithm listings
 

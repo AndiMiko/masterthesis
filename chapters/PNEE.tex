@@ -55,7 +55,7 @@ The first step in the preprocess is to scatter out photons. We rely on the same 
 \beta = \frac{|\cos{\omega}|L(\text{s}, \omega)}{p(x)p(\text{s}, \omega)}
 \end{align}
 
- After we found the first intersection of the photon we check the surface BSDF; if it is fully specular, the photon can be discarded, if it has a diffuse part we store the photon, or at least its origin and $\beta$ in a data structure which we discuss in the next sections. Note that sampling the point $s$ within an area light is not a concern of Next Event Estimation; instead, specific techniques exist. The emission on an area light might be given by a texture, for example, importance sampling by power seems intuitive. Another option is to tessellate an area light into smaller area lights; this lessens the strain on selecting $s$ but elevates it for the choice of the light source $x$. This is one scenario where PNEE can shine. Uniformly omitting point light sources are a special case where $p(s,\omega)$ does not play any role, thus point lights are ideal to test our techniques with minimum variance introduced from other matters. We utilize this fact in our evaluation in chapter~\ref{ch:Evaluation}.
+ After we found the first intersection of the photon we check the surface BSDF; if it is fully specular, the photon can be discarded, if it has a diffuse part we store the photon, or at least its origin and $\beta$ in a data structure which we discuss in the next sections. Note that sampling the point $s$ within an area light is not a concern of Next Event Estimation; instead, specific techniques exist. The emission on an area light might be given by a texture, for example, importance sampling by power seems intuitive. Another option is to tessellate an area light into smaller area lights; this lessens the strain on selecting $s$ but elevates it for the choice of the light source $x$. This is one scenario where PNEE can shine. Uniformly omitting point light sources are a special case where $p(s,\omega)$ does not play any role, therefor point lights are ideal to test our techniques with minimum variance introduced from other matters. We utilize this fact in our evaluation in chapter~\ref{ch:Evaluation}.
 
 \paragraph{Importance sampling photons}
 \label{ch:photonimportancesample}
@@ -205,42 +205,48 @@ With CDFs, one might expect considering only the closest CDF might be enough, as
     \centering
     \begin{subfigure}{.5\textwidth}
       \centering
-      \adjincludegraphics[width=0.9\textwidth, trim={{.07\width} {.55\height} {.73\width} {.25\height}},clip]{figures/test2_artifacts.png}
+      \adjincludegraphics[width=0.9\textwidth, trim={{.1\width} {.65\height} {.75\width} {.2\height}},clip]{figures/test2_artifacts.png}
       \caption{}
       \label{fig:varianceEdgeCdfgrid}
     \end{subfigure}%
     \begin{subfigure}{.5\textwidth}
       \centering
-      \includegraphics[width=0.9\textwidth]{figures/img-placeholder.png}
+      \adjincludegraphics[width=0.9\textwidth, trim={{.55\width} {.7\height} {.15\width} {.0\height}},clip]{figures/examples/StanfordMuseum_pvox_ps64_t60_icdf-0_pc5000k_mc0,1_Vox64_65805.png}
       \caption{}
       \label{fig:gridNoInt}
     \end{subfigure}
     \begin{subfigure}{.5\textwidth}
       \centering
-      \includegraphics[width=0.9\textwidth]{figures/img-placeholder.png}
+      \adjincludegraphics[width=0.9\textwidth, trim={{.75\width} {.0\height} {.0\width} {.75\height}},clip]{figures/examples/StanfordMuseum_spat_ps256_t239_16778.png}
       \caption{}
       \label{fig:spatialedge}
     \end{subfigure}%
     \begin{subfigure}{.5\textwidth}
       \centering
-      \includegraphics[width=0.9\textwidth]{figures/img-placeholder.png}
+      \adjincludegraphics[width=0.9\textwidth, trim={{.55\width} {.7\height} {.15\width} {.0\height}},clip]{figures/examples/StanfordMuseum_ctree_ps128_t151_akr_knn-1_pc8000k_knc-1_cdfc-25000_mc0,1_sm0,01_pT20_75689.png}
       \caption{}
       \label{fig:voronoi}
     \end{subfigure}
     \begin{subfigure}{.5\textwidth}
       \centering
-      \includegraphics[width=0.9\textwidth]{figures/img-placeholder.png}
+      \adjincludegraphics[width=0.9\textwidth, trim={{.42\width} {.0\height} {.32\width} {.74\height}}, clip]{figures/examples/test2_ctree_ps32_t128_knn-1_pc50000k_knc-8_cdfc-100000_mc0,1_41337.png}
       \caption{}
-      \label{fig:discontinuityEdges}
+      \label{fig:varianceHoles}
     \end{subfigure}%
     \begin{subfigure}{.5\textwidth}
       \centering
-      \includegraphics[width=0.9\textwidth]{figures/img-placeholder.png}
+      \adjincludegraphics[width=0.9\textwidth, trim={{.55\width} {.7\height} {.15\width} {.0\height}},clip]{figures/examples/StanfordMuseum_ptree_ps64_t202_none_knn-1_pc8000k_nn32_mc0,1_sm1_76314.png}
       \caption{}
-      \label{fig:varianceHoles}
+      \label{fig:discontinuityEdges}
     \end{subfigure}
-    \caption{Various kinds of visible variance edges that we intend to solve throughout this chapter. \\ (a) \textit{cdfgrid} without interpolation. Even though most of the image is well converged, small corner artifacts are apparent. The CDF construction is dominated by the photons in the darker area, where it works well. As the lighting changes rapidly, the used CDF becomes a bad estimator. \\ (b) Common variance edges in \textit{cdfgrid} without interpolation. \\(c) Much less common variance edges in PBRTs \textit{spatial}. \\(d) Voronoi cells when only one nearest neighbor is queried with \textit{cdftree}. \\(e) \textit{cdftree} and \textit{photontree}. Global interpolation used with only an limited number of local neighbors. Variance edges show because the outmost neighbor snaps.
-    \\(f) Variance holes caused by a peak in the interpolation towards a badly constructed CDF. \\ split this figure up maybe?}
+    \caption{Various kinds of visible variance edges that we intend to solve throughout this chapter. (b)(d)(f) are rather extreme cases with a quite low photon count for better illustration purposes. 
+    \\(a) \textit{cdfgrid} without interpolation. Even though most of the image is well converged, small corner artifacts are apparent. The CDF construction is dominated by the photons in the darker area, where it works well. As the lighting changes rapidly, the used CDF becomes a bad estimator. 
+    \\(b) Common variance edges in \textit{cdfgrid} without interpolation. 
+    \\(c) Much less common variance edges in PBRTs \textit{spatial}. The black corner should be brown in fact. Another edge is seen on the left. 
+    \\(d) Voronoi cells when only one nearest neighbor is queried with \textit{cdftree}. 
+    \\(e) Variance holes caused by a peak in the interpolation towards a badly constructed CDF.
+    \\(f) \textit{cdftree} and \textit{photontree}. Global interpolation used with only an limited number of local neighbors. Variance edges show because the outmost neighbor snaps.
+    }
 \end{figure}
 
 
@@ -267,6 +273,37 @@ As we do not evaluate this equation directly, but rather construct an interpolat
     &+ \alpha(1-\beta)(1-\gamma)e + \alpha)(1-\beta)\gamma f \notag \\
     &+ \alpha\beta\gamma g  \notag
 \end{align}
+
+\unsure{Algorithm 1 is not done (formating/naming). Should I include this algorithm or leave it out entirely? There is also no textreference for now as I tend to leave it out.}
+
+\begin{algorithm}
+\caption{Get interpolated Distribution}\label{alg:trilinear}
+\begin{algorithmic}[1]
+\Procedure{getInterpolatedDistribution}{$pos$}
+\State $distributions$ $\gets$ getDistribution($pos$)
+\State $voxelPos$ $\gets$ $pos$
+\State $influences$ $\gets$ [1.0]
+\For {$i \gets 1; i < 3; ++i$}
+    \If {$offsetInVoxel == 0.f$} continue
+    \EndIf
+    \State $offsetInVoxel \gets (fmod(offset[i] / (1.0f / nVoxels[i]), 1.0f)) - 0.5f$
+    \State $size \gets voxelIds.size()$
+    \For {$n \gets 0; n < size; ++n$}
+        \State newId[i] += offsetInVoxel > 0? 1 : -1
+        
+        \If {$newId[i] >= 0 and newId[i] < nVoxels[i]$} 
+            \State $distributions.push_back(getDistribution(newPackedPos, newHash, nProbes))$
+            \State $voxelIds.pushback(newId)$
+            \State $influence.pushback(influence[n] * abs(offsetInVoxel))$
+            \State $influence[n] *= (1 - abs(offsetInVoxel))$
+        \EndIf
+        
+    \EndFor
+\EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
 
 \paragraph{Non-linear interpolation}
 Instead of linear interpolation the function can be curved to make transitions between edges even smoother. A commonly used function is smooth step (equation~\ref{eq:smoothstep}) or even smoother step (equation~\ref{eq:smootherstep}) \parencite{ebert2003texturing}. Using a Hermite polynomial the slope of the smoothstep function is zero at both edges (see figure~\ref{fig:smoothstep}).

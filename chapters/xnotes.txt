@@ -68,6 +68,11 @@ Notation var/MSE?
 
 Conflicting notations in notation list?
 
+need a list of current related work from siggraph asia
+
+notation: how to express in text that i is \in R and \in (0,1] for example
+
+split the a-e figure up maybe?
 
 read
 Approximate K-Means++ in Sublinear Time
