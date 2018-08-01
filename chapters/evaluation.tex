@@ -2,7 +2,7 @@
 \chapter{Evaluation}
 \label{ch:Evaluation}
 %% ==============
-In this chapter we compare all the techniques we implemented with plain uniform and powerbased Next Event Estimation and PBRTs implementation. We try to point out the strength and weaknesses of the techniques for certain kind of scenes and scenarios. In this context we mainly argue about image quality, time and memory. We compare time and momery consumtion based on the Mean Squared Error (MSE) metric from equation~\ref{eq:mse}. Where $Y_i$ is the vector of pixels of length $n$ of our reference image and $\widetilde{Y}_i$ is the vector of pixels of the compared image. 
+In this chapter we compare all the techniques we implemented with plain uniform and powerbased Next Event Estimation and PBRTs implementation. We try to point out the strength and weaknesses of the techniques for certain kind of scenes and scenarios. In this context we mainly argue about image quality, time and memory. We compare time and momery consumtion based on the Root Mean Squared Error (RMSE) metric from equation~\ref{eq:rmse}. Where $Y_i$ is the vector of pixels of length $n$ of our reference image and $\widetilde{Y}_i$ is the vector of pixels of the compared image. Note that for unbiased techniques the variance $\sigma$ is equal to the MSE, hence we use both interchangeably in various contexts. 
 
 \begin{align}\label{eq:mse}
 \text{MSE} = \frac{1}{n}\sum_{i=1}^{n}\abs{Y_i - \widetilde{Y}_i}^2
@@ -12,7 +12,7 @@ In this chapter we compare all the techniques we implemented with plain uniform 
 \end{align}
 
 
-We compare based on an equal MSE, therefor the MSE is an estimator for our image quality. When we argue about image quality throughout this chapter we rather refer to the perceived image quality\footnote{The MSE in itself has a perception compontent because of the square. The MSE is a very commonly used estimator, nonetheless one could imagine using a metric which does reflect human perception more closely. This usually leads to problems with subjectivity.}, in our case this usually means whether sensible artifacts are present. As all the compared techniques are unbiased, given unlimited time, all of them would converge to the same image. Artifacts are usually areas or edges which will converge very slowly, in practice maybe never. When we say a technique has a bad image quality, we say that artifacts are present. 
+We often plot and compare based on RMSE, therefor the RMSE is an estimator for our image quality. When we argue about image quality we rather refer to the perceived image quality\footnote{The RMSE in itself has a perception compontent because of the square. The RMSE is a very commonly used estimator, nonetheless one could imagine using a metric which does reflect human perception more closely, see for example the structural similarity index (SSIM) \parencite{DBLP:journals/tip/WangBSS04}. This usually leads to problems with subjectivity.}, in our case this usually is determined by whether sensible artifacts are present. As all the compared techniques are unbiased, given unlimited time, all of them would converge to the same image. Artifacts are usually areas or edges which will converge very slowly, in practice maybe never. When we say a technique has a bad image quality, we say that artifacts are present. 
 
 \begin{align}\label{eq:sigmaCor}
 \sigma \sim \frac{1}{\sqrt{N}}
@@ -60,7 +60,7 @@ We tried to identify problematic light and object constellations, which are caus
 
 \subsection{Test scenes}
 
-We designed a special scene, called \textit{Stanford-Museum}, for most of the comparisons we present in this chapter. This scene covers all aforementioned problem cases and thus gives a good impression about strengths and weaknesses of each technique. The simplicity of the scene allows the reader to clearly correlate variance with the problem cases, but ultimately does not provide a photorealistic appeal. On the other hand we present two more scenes, \textit{City} and \textit{measure-one}, for a comparison on real scenes with all sorts of details.
+We designed a special scene, called \textit{Stanford-Museum}, for most of the comparisons we present in this chapter. This scene covers all aforementioned problem cases and thus gives a good impression about strengths and weaknesses of each technique. The simplicity of the scene allows the reader to clearly correlate variance with the problem cases, but ultimately does not provide a photorealistic appeal. On the other hand we present two more scenes, \textit{San Miguel} and \textit{Zero-day}, for a comparison on real scenes with all sorts of details.
 
 \paragraph{Stanford-Museum}
 
@@ -71,7 +71,7 @@ We designed a special scene, called \textit{Stanford-Museum}, for most of the co
 \label{fig:stanfordmuseumref}
 \end{figure}
 
-We describe the most important problem cases we had in mind when designing the Stanford-Museum scene in figure~\ref{fig:stanfordmuseumref}, which is the reference image we calculate the MSE against. The scene contains 4058 light sources, all of whom are point light sources. We chose point light sources, because sampling a point on a area light source is not a concern of PNEE, thus reducing variance from other effects does discloses artifacts produced by our techniques more clearly. We also render the scene with a pathtracer with a max depth parameter of one, again, using the same argument, as depth introduces variance from the indirect lighting term of the pathtracer. Additionally, this makes rendering a nearly perfect reference image possible, by using PBRTs direct lighting integrator, which samples all point light sources for any intersection point. The reference image is rendered with 128 samples per pixel in 17 hours on our test machine. 
+We describe the most important problem cases we had in mind when designing the Stanford-Museum scene in figure~\ref{fig:stanfordmuseumref}, which is the reference image we calculate the RMSE against. The scene contains 4058 light sources, all of whom are point light sources. We chose point light sources, because sampling a point on a area light source is not a concern of PNEE, thus reducing variance from other effects does disclose artifacts produced by our techniques more clearly. We also render the scene with a pathtracer with a max depth parameter of one, again, using the same argument, as depth introduces variance from the indirect lighting term of the pathtracer. Additionally, this makes rendering a nearly perfect reference image possible, by using PBRTs direct lighting integrator, which samples all point light sources for any intersection point. The reference image is rendered with 128 samples per pixel in 17 hours on our test machine and aside from anti-aliasing should be close to perfect. 
 
 \begin{itemize}
     \item[(1)] The dragon is 20 times smaller than the Buddah but is very close to the camera and as such takes up almost the same screen space. Several low intensity point lights illuminate the dragon. The difference in size as well as light intensity constitute typical problem cases with LOD. Especially the illumination of the eyes is a rather extreme case, light source intensity is roughly 200.000 times less compared to the strongest light sources in the scene. Additionally, the left outline of the dragon is illuminated by various light sources from bellow in the scene, where the dragon takes up only an incredibly small solid angle and thus photons are very unlikely to hit the dragon.
@@ -84,12 +84,14 @@ We describe the most important problem cases we had in mind when designing the S
     \item[(8)] A completely occluded light cluster with roughly 1000 light sources. In a real scene this might be a different room of a house for example. There are four such occluded clusters in the scene.
 \label{li:stanfordmuseum}
 \end{itemize}
-\paragraph{Measure-one}
+\paragraph{San Miguel}
+\parencite{Sanmiguel}
 
 
 
+\paragraph{Zero-Day}
 
-\paragraph{City}
+\parencite{Beeple}
 
 
 
@@ -119,6 +121,56 @@ We describe the most important problem cases we had in mind when designing the S
 % which parameters did we try to configure. Which parameters turned out to be good and will be set as fixed?
 
 \section{Equal time comparisons}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\textwidth]{figures/plots/SM_all_mse_report.pdf}
+    \caption{Stanford Museum comparison}
+    \label{fig:gasgds}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\textwidth]{figures/plots/SM_Main.pdf}
+    \caption{Stanford Museum comparison}
+    \label{fig:asffa}
+\end{figure}
+
+%\begin{figure}
+%    \centering
+%    \includegraphics[width=1\textwidth, trim=0 0 2200 0, clip]{figures/plots/SM_Main_quad.pdf}
+%    \caption{Stanford Museum comparison}
+%    \label{fig:asasfffa}
+%\end{figure}
+
+\begin{figure}
+    \centering
+    \adjincludegraphics[width=0.5\textwidth, trim={{.0\width} {.0\height} {.25\width} {.0\height}},clip]{figures/plots/SM_Main_quad.pdf}
+    \caption{Stanford Museum comparison}
+    \label{fig:asgfdgffa}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \adjincludegraphics[width=1\textwidth, trim={{.0\width} {.0\height} {.25\width} {.0\height}},clip]{figures/plots/SM_Main_quad.pdf}
+    \caption{Stanford Museum comparison}
+    \label{fig:asgffasfdgffa}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{.5\textwidth}
+      \centering
+        \adjincludegraphics[width=1\textwidth, trim={{.0\width} {.0\height} {.25\width} {.0\height}},clip]{figures/plots/SM_Main_quad.pdf}
+        \caption{Stanford Museum comparison}
+        \label{fig:asgffagsgsfdgffa}
+    \end{subfigure}%
+    \begin{subfigure}{.5\textwidth}
+        \adjincludegraphics[width=1\textwidth, trim={{.0\width} {.0\height} {.25\width} {.0\height}},clip]{figures/plots/SM_Main_quad.pdf}
+        \caption{Stanford Museum comparison}
+        \label{fig:asgffagdssfdgffa}
+    \end{subfigure}
+\end{figure}
 
 \section{Memory comparisons}
 
