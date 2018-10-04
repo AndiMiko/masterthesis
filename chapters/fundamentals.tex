@@ -2,47 +2,54 @@
 \chapter{Fundamentals}
 \label{ch:Fundamentals}
 %% ==============
-This chapter introduces important concepts and research fundamentals that are premised throughout this work. Most of these concepts are fundamental in photorealistic rendering and thus only covered briefly with references to popular basic literature for further understanding of this topic. Chapter~\ref{ch:Prev} will continue to cover related work that also focuses on solving lightning with many lights, but not necessarily acts as a foundation for the techniques introduced in chapter~\ref{ch:PNEE}.
+This chapter introduces important concepts and research fundamentals that are premised throughout this work. Most of these concepts are fundamental in photorealistic rendering and thus only covered briefly, please refer to \textcite{veach1997robust} and \textcite{DBLP:conf/siggraph/Kajiya86} for a more in-depth discussion. Notations and structure of this chapter are oriented at \textcite{lecture} and \textcite{pbrt}. Chapter~\ref{ch:Prev} will continue to cover related work that also focuses on solving lightning with many lights, but not necessarily acts as a foundation for the techniques introduced in chapter~\ref{ch:PNEE}.
 
 
-\section{Rendering equation}
+\section{Rendering Equation}
 
 In modern photorealistic rendering the rendering equation (\ref{eq:req}) plays a central role. It describes how much radiance $L$ is emitted and reflected from a point $x$ into direction $\omega$. This serves as a physically correct representation of light transport for most observable phenomena.
 
 \begin{align}
 \label{eq:req}
-L(x, \omega) =  L_e(x, \omega) + \int_{\Omega}f_r(\omega_i, x, \omega) L_i(x, w_i)\cos\theta_i d\omega_i 
+L(x, \omega) =  L_e(x, \omega) + \int_{\Omega}f_r(\omega_i, x, \omega) L_i(x, \omega_i)\cos\theta_i \dif\omega_i 
 \end{align}
 
-$L_e(x, \omega)$ describes the light emission at $x$ into direction $\omega$. The integral is adding up reflected light from (infinitely) many directions $\omega_i$ and multiplies it with the solid angle $\cos \theta_i$. $f_r(\omega_i, x, \omega)$ is called the Bidirectional Scattering Distribution Function (BSDF) and provides a factor of how much incoming light from $\omega_i$ is reflected to direction $\omega$ at point $x$. Usually the BSDF is split up into a BRDF (Bidirectional Reflectance Distribution Function) and BSSDF (Bidirectional Subsurface scattering Distribution Function) which describe the positive hemisphere and negative hemisphere (within the material) respectively. Lastly $L_i(x, \omega_i)$ describes the incoming radiance from direction $\omega_i$. To calculate $L_i(x, \omega_i)$ a raycast is needed into direction $-\omega$. Assuming the first intersection of this ray is named $y$ $L_i(x, \omega_i)$ can be rewritten as $L(y, -\omega_i)$. Then again, $L(y, -\omega_i)$ can be calculated with the rendering equation, recursively. It is apparent that this spawns an infinite number of possible light paths and thus infinite dimensions to calculate correct light transport. To solve this only a limited number of samples can be taken to estimate the integral, this technique is discussed in section~\ref{sec:montecarlo}.
+$L_e(x, \omega)$ describes the light emission at $x$ into direction $\omega$. The integral is collecting incident light by integrating over the projected solid angle $\cos\theta_i\dif\omega_i$. $f_r(\omega_i, x, \omega)$ is called the Bidirectional Scattering Distribution Function (BSDF) and provides a factor of how much incoming light from $\omega_i$ is reflected to direction $\omega$ at point $x$. Usually the BSDF is split up into a BRDF (Bidirectional Reflectance Distribution Function) and BTDF (Bidirectional Transmittance Distribution Function) which describe the positive hemisphere and negative hemisphere (within the material) respectively. Lastly $L_i(x, \omega_i)$ describes the incoming radiance from direction $\omega_i$. To calculate $L_i(x, \omega_i)$ a raycast is needed into direction $-\omega$. Assuming the first intersection of this ray is named $y$ $L_i(x, \omega_i)$ can be rewritten as $L(y, -\omega_i)$. Then again, $L(y, -\omega_i)$ can be calculated with the rendering equation, recursively. It is apparent that this spawns an infinite number of possible light paths and thus infinite dimensions to calculate correct light transport. To solve this only a limited number of samples can be taken to estimate the integral, this technique is discussed in section~\ref{sec:montecarlo}.
 
 \subsection{Radiometry}
 
 
-So far, we spared the conversation about the measurement units. Also a few assumptions should be mentioned concerning the rendering equation. We assume that light ensues to the rules of geometric optics, while in fact light has a wave-particle-dualism nature. Additionally, most computer graphic models ignore rarely visible phenomena like Phosphorescenc, Lumineszenz, fluorescence and polarization. With this assumptions we define that both $L$ and and $L_e$ from the rendering equation are given as Radiance in $[W / (m^2sr)]$. The measurement units are assambled as follows.
+So far, we spared the conversation about the measurement units. Also a few assumptions should be mentioned concerning the rendering equation. We assume that light ensues to the rules of geometric optics, while in fact light has a wave-particle-dualism nature. Additionally, most computer graphic models ignore rarely visible phenomena like phosphorescenc, fluorescence, polarization, relativistic effects and a few other. With this assumptions we define that both $L$ and and $L_e$ from the rendering equation are given as Radiance in $[W / (m^2sr)]$. The measurement units are assembled as follows.
+
 \begin{align}
-L = \frac{dE}{\cos \theta d\omega} = \frac{d^2\Phi}{dA\cos \theta d\omega} \qquad [W / (m^2 sr) ]
+L = \frac{\dif E}{\cos \theta \dif\omega} = \frac{\dif^2\Phi}{\dif A\cos \theta \dif\omega} \qquad [W / (m^2 sr) ]
 \end{align}
 
 
-With $\cos \theta d\omega$ being the projected solid angle $\omega^\tau$ and $E$ being the incident light called Irrandiance, which describes the radiant flux per area.
+With $\cos \theta \dif\omega$ being the projected solid angle $\omega^\perp$ and $E$ being the incident light called Irrandiance, which describes the radiant flux per area.
 \begin{align}
-E = \frac{ d\Phi }{ dA } \qquad [W m^{-2} ]
+E = \frac{ \dif \Phi }{ \dif A } \qquad [W m^{-2} ]
 \end{align}
 Then the radiant flux $\Phi$ being the radiant energy per time given as
 
 \begin{align}
- \Phi = \frac{dQ}{dt} \qquad [W]   
+ \Phi = \frac{\dif Q}{\dif t} \qquad [W]   
 \end{align}
 
-measured in Watt $[W = Js^{-1} ]$. And the radiant Energy $Q$ measured in Joule $[J]$.
+measured in Watt $[W = Js^{-1} ]$. And the radiant Energy $Q$ measured in Joule $[J]$. The energy $q$ of a single photon can be calculated with 
 
-\subsection{light sources}
+\begin{align}
+ q = \frac{hc}{\lambda} \qquad [J]   
+\end{align}
+
+with $\lambda$ being the wavelength of light in nanometers, $h$ being the Planck constant $6.626~*~10^{-34}~Js$ and $c$ being the speed of light.
+
+\subsection{Light Sources}
 
 
 The radiant flux of a point light can now be set as $\Phi_g$ in $[W]$. Assuming an isotropic emission the Intensity of a point light is given as
 \begin{align}
- I = \frac{\Phi_g}{4\pi sr} \qquad [ W sr^{-1} ] .
+ I = \frac{\Phi_g}{4\pi} \qquad [ W sr^{-1} ] .
 \end{align}
 
 The Irradiance (incident $L$) on a sphere with radius $r$ around the point light is then given as
@@ -50,63 +57,126 @@ The Irradiance (incident $L$) on a sphere with radius $r$ around the point light
 E_r =  \frac{\Phi_g}{4\pi r^2} \qquad [ W m^{-2} ] .
 \end{align}
 
-For an area $dA$ the solid angle is 
+For an area $\dif A$ the solid angle is 
 
 \begin{align}
-d\omega = \frac{\cos \theta dA}{r^2}  
+\dif \omega = \frac{\cos \theta \dif A}{r^2}  
 \end{align}
 
 
 and thus the Irradiance is
 
 \begin{align}
-E(x) = \frac{ I(\omega) d\omega }{ dA } = \frac{ \Phi_g \cos \theta }{ 4 \pi r^2}.
+E(x) = \frac{ I(\omega) \dif \omega }{ \dif A } = \frac{ \Phi_g \cos \theta }{ 4 \pi r^2}.
 \end{align}
 
-…
+For an area light it depends how the Radiance is modeled or given. A special case with constant radiance $L(\theta) = const$ is called a Lambertian Emitter. The intensity has to decline with $\cos\theta$, the Radiance is then given as 
+
+\begin{align}
+L(\theta) = \frac{\dif^2\Phi}{\dif\cos\theta\dif\omega}.
+\end{align}
+
+
 
 \section{Sampling}
 
-
-The rendering equation is not directly solvable because of infinite directions $\omega$ in the integral and infinite paths at every intersection; To be able to calculate a good estimation thereof we have to take a reasonable number of samples and calculate their average.
+Instead of tracing single particles in an attempt to simulate the actual physics, we choose paths that numerically represent probabilities of the physical events. \unsure{Ist das so korrekt formuliert?} As the rendering equation is continuous and infinitely recursive a numerical solution is needed to estimate it. The approximation of a definite integral with the help of random samples is called Monte Carlo Integration. Sampling describes the choice of random variables based on a given probablity density to reduce the variance of these numerical methods.
 
 \subsection{Monte Carlo Integration}
 \label{sec:montecarlo}
+\label{sec:MC}
+
+To numerically approximate the definite integral over a function $f(x)$ we define $g(x) = \frac{f(x)}{p(x)}$ and instead approximate the definite integral over $g(x)p(x)$. We pick samples $x_i$ distributed according to the probability density function (section~\ref{sec:PDF}) $p(x)$ and write it as the expectation value of a random variable.
+
+\begin{align}
+E(g(x)) = \int_a^b g(x)p(x)\dif x \approx \frac{1}{N} \sum_{i=1}^{N} g(x_i) 
+\end{align}
+
+Pluging in the definition of $g(x)$ we see that we are correctly approximating the definite integral over $f(x)$ by dividing each sampled function value $f(x_i)$ by its sampling probability $p(x_i)$ and averaging them.
+
+\begin{align}
+\int_a^b \frac{f(x)}{p(x)}p(x)\dif x = \int_a^b f(x) \dif x \approx \frac{1}{N} \sum_{i=1}^{N} \frac{f(x_i)}{p(x_i)}
+\end{align}
 
 
+The rendering equation (\ref{eq:req}) then is numerically estimated as such.
 
+\begin{align}
+\label{eq:reqmc}
+L(x, \omega) =  L_e(x, \omega) + \frac{2\pi}{N} \sum_{i=1}^{N} f_r(\omega_i, x, \omega) L_i(x, \omega_i)\cos\theta_i
+\end{align}
 
+Where the $2\pi$ has to be added to adjust for the fact that the integral $\int_\Omega$ over a solid angle is in fact a multi-dimensional integral in spherical coordinates $\int_{\phi = -\pi}^{\pi}\int_{\theta=0}^{\frac{\pi}{2}}$ and the calculation would be skewed otherwise. \unsure{Ist das so korrekt gesagt?}
 
+\subsection{Probability Distribution Function}
+\label{sec:PDF}
 
+For a numerical solution samples (e.g. points, directions, ...) are needed, these samples can be taken for example uniformly or based on a given Probability Distribution Function (PDF). Throughout this work we refer to a PDF both in the discrete as well as in the continuous case, more strictly the discrete case is commonly referred to as Probability Mass Function (PMF) and the continuous case is referred to as Probability Density Function. Suppose that a random experiment yields random results $\omega$, we define a random Variable $X$ which maps the results to a set $\mathcal{A} \subseteq \mathbb{R}$.
 
+\begin{align}
+X: \Omega \rightarrow \mathcal{A}
+\end{align}
 
+For the discrete case the PDF/PMF is then defined as
 
+\begin{align}
+p(x) = \text{P}(X = x) = \text{P}( \{\omega \in \Omega : X(\omega) = x \} ).
+\end{align}
 
+Intuitively spoken it is simply the probability of a certain outcome $x \in \mathcal{A}$ and $0$ for $x \notin \mathcal{A}$. Therefore it is apparent that the sum of probabilities has to equal to $1$.
 
-%% ==============
-\section{Rendering equation}
-\subsection{Radiometry}
-\subsection{Raytracer}
-\subsection{Light Path Expressions}
-\subsection{Measurement Contribution Function}
+\begin{align}
+\label{eq:sum1}
+\sum_{x\in\mathcal{A}}p(x) = 1
+\end{align}
 
+The cumulative distribution function (CDF) $F(x)$ is the probability that $X$ will take a value less than or equal to $x \in \mathbb{R}$.
 
-%% ==============
-\section{Sampling}
+\begin{align}
+ F(x) = \text{P}(X \leq x)
+\end{align}
 
-\subsection{Probablity Density Function}
+Therefore the probability that $X$ lies in the semi-closed interval $(a, b]$, where $a < b$ is  
 
-\subsection{Cumulative Distribution Function}
+\begin{align}
+\label{eq:cdfr}
+ \text{P}(a \leq X < b) = F(b) - F(a).
+\end{align}
+
+For the continuous case the probability for a specific result is always zero, for this reason probabilities can only be given for intervals as in equation~\ref{eq:cdfr}. Hence, $p(x)$ may be viewed as the probability of $X$ sampling a value within the infinitesimal interval $[x, x + \dif x]$. The Probability Density Function $p(x)$ therefore is the slope of the CDF.\unsure{correct?} The CDF can be expressed as the integral over the Probability Density Function.
+
+\begin{align}
+\label{eq:cdfc}
+ F(x) = \int_{-\infty}^{x}p(t)\dif t.
+\end{align}
+
+or rearranged $p(x)$ can be defined as
+
+\begin{align}
+ p(x) = \frac{\dif}{\dif x} F(x).
+\end{align}
+
+The CDF is monotonically increasing and $F(x) \in [0,1]$. The PDF is $p(t) \in [0, \infty)$ and $\int p(t)\dif t = 1$ analogous to the discrete case in equation~\ref{eq:sum1}. 
 
 \subsection{Inverse Transform Sampling}
 
-\subsection{Monte Carlo Integration}
-\label{sec:MC}
+Having a PDF we usually now want to take random samples that are distributed according to it. Inverse Transform Sampling is one popular technique to do that. First $F(x)$ has to be constructed from the PDF like in equation~\ref{eq:cdfc}. The function then is inverted to $F^{-1}(x)$, hence the name inverse transform sampling. Now a random number $\xi$ is sampled uniformly in $[0, 1)$ and mapped with $F^{-1}(.)$. The resulting random variable $X$ is then distributed according to $p(x)$.
+
+\begin{align}
+ X = F^{-1}(\xi)
+\end{align}
+
+Effectively, $\xi$ constitutes the proportion of the area under $F(.)$ which is left of the sampled number $x$. Computing the inverse of the CDF analytically is often impossible, for this cases Inverse Transform Sampling is computationally inefficient. Other methods like Rejection Sampling may apply better to these cases. In this paper we mostly work with discrete PDFs, thus inverting their CDF is always trivial by simply adding up the values.
+
+\subsection{Variance}
+
+
 
 \subsection{Importance Sampling}
 \label{sec:IS}
 
 
+an intuitive approach is to uniformly distribute these samples. Such a distribution will usually not be ideal
 \begin{figure}
     \centering
     \includegraphics[width=0.8\textwidth]{figures/plots/importancesampling.pdf}
@@ -114,52 +184,86 @@ The rendering equation is not directly solvable because of infinite directions $
     \label{fig:importancesample}
 \end{figure}
 
-\subsection{Multiple Importance Sampling}
+
+
+
+
+
+
+
+
+
 
 %% ==============
-\section{Bidirectional scattering distribution function}
+%\section{Rendering equation}
+%\subsection{Radiometry}
+%\subsection{Raytracer}
+%\subsection{Light Path Expressions}
+%\subsection{Measurement Contribution Function}
+
+
+%% ==============
+%\section{Sampling}
+
+%\subsection{Probablity Density Function}
+
+%\subsection{Cumulative Distribution Function}
+
+%\subsection{Inverse Transform Sampling}
+
+%\subsection{Monte Carlo Integration}
+
+
+%\subsection{Importance Sampling}
+%\label{sec:IS}
+
+
+%\subsection{Multiple Importance Sampling}
+
+%% ==============
+%\section{Bidirectional scattering distribution function}
 % mainly only for introduction of specular vs diffuse reflections
 
 
 %% ==============
-\section{Light sources}
+%\section{Light sources}
 
 
 %% ==============
-\section{Path Tracing}
-\subsection{Next Event Estimation}
-\label{sec:NEE}
+%\section{Path Tracing}
+%\subsection{Next Event Estimation}
+%\label{sec:NEE}
 
 
 %% ==============
-\section{Photon Mapping}
-\label{sec:PM}
+%\section{Photon Mapping}
+%\label{sec:PM}
 
-\subsection{Progressive Photon Mapping}
+%\subsection{Progressive Photon Mapping}
 
-\subsection{Stochastic Progressive Photon Mapping}
+%\subsection{Stochastic Progressive Photon Mapping}
 
 
-
-%% ==============
-\section{Instant Radiosity}
 
 %% ==============
-\section{Datastructures}
+%\section{Instant Radiosity}
+
+%% ==============
+%\section{Datastructures}
 
 % Teapot in a stadium ...
 
-\subsection{Bounding Volume Hierarchy}
-\subsection{Grid}
-\subsection{Octree}
-\subsection{k-d Tree}
-\subsection{Surface Area Heuristic}
+%\subsection{Bounding Volume Hierarchy}
+%\subsection{Grid}
+%\subsection{Octree}
+%\subsection{k-d Tree}
+%\subsection{Surface Area Heuristic}
 
-\section{Interpolation}
-\subsection{Scattered data}
-\subsection{Structured data}
+%\section{Interpolation}
+%\subsection{Scattered data}
+%\subsection{Structured data}
 
-\label{ch:fu:trilinear}
+%\label{ch:fu:trilinear}
 
 \begin{figure}
     \centering
@@ -167,13 +271,13 @@ The rendering equation is not directly solvable because of infinite directions $
     \caption{The weights are the volume of the opposing rectangle.}
     \label{fig:bilinear}
 \end{figure}
-\subsection{Global methods}
+%\subsection{Global methods}
 
 
 %% ==============
-\section{Machine Learning}
+%\section{Machine Learning}
 
-\subsection{Fuzzy k-means}
-\subsection{Agglomerative Hierarchical Clustering}
-\subsection{Expectation Maximaization}
-\subsection{Transductive Support Vector Machine}
+%\subsection{Fuzzy k-means}
+%\subsection{Agglomerative Hierarchical Clustering}
+%\subsection{Expectation Maximaization}
+%\subsection{Transductive Support Vector Machine}
