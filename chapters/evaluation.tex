@@ -2,7 +2,7 @@
 \chapter{Evaluation}
 \label{ch:Evaluation}
 %% ==============
-In this chapter we compare all the techniques we implemented with plain uniform and powerbased Next Event Estimation and PBRTs implementation. We try to point out the strength and weaknesses of the techniques for certain kind of scenes and scenarios. In this context we mainly argue about image quality, time and memory. We compare time and momery consumtion based on the Root Mean Squared Error (RMSE) metric from equation~\ref{eq:rmse}. Where $Y_i$ is the vector of pixels of length $n$ of our reference image and $\widetilde{Y}_i$ is the vector of pixels of the compared image. Note that for unbiased techniques the variance $\sigma$ is equal to the MSE, hence we use both interchangeably in various contexts. 
+In this chapter we compare all the techniques we implemented with plain uniform and power-based Next Event Estimation and PBRTs implementation. We try to point out the strength and weaknesses of the techniques for certain kind of scenes and scenarios. In this context we mainly argue about image quality, time and memory. We compare time and memory consumption based on the Root Mean Squared Error (RMSE) metric from equation~\ref{eq:rmse}. Where $Y_i$ is the vector of pixels of length $n$ of our reference image and $\widetilde{Y}_i$ is the vector of pixels of the compared image. Note that for unbiased techniques the variance $\sigma^2$ is equal to the MSE, hence we use both interchangeably in various contexts. 
 
 \begin{align}\label{eq:mse}
 \text{MSE} = \frac{1}{n}\sum_{i=1}^{n}\abs{Y_i - \widetilde{Y}_i}^2
@@ -12,7 +12,7 @@ In this chapter we compare all the techniques we implemented with plain uniform 
 \end{align}
 
 
-We often plot and compare based on RMSE, therefor the RMSE is an estimator for our image quality. When we argue about image quality we rather refer to the perceived image quality\footnote{The RMSE in itself has a perception compontent because of the square. The RMSE is a very commonly used estimator, nonetheless one could imagine using a metric which does reflect human perception more closely, see for example the structural similarity index (SSIM) \parencite{DBLP:journals/tip/WangBSS04}. This usually leads to problems with subjectivity.}, in our case this usually is determined by whether sensible artifacts are present. As all the compared techniques are unbiased, given unlimited time, all of them would converge to the same image. Artifacts are usually areas or edges which will converge very slowly, in practice maybe never. When we say a technique has a bad image quality, we say that artifacts are present. 
+We often plot and compare based on RMSE, therefor the RMSE is an estimator for our image quality. When we argue about image quality we rather refer to the perceived image quality\footnote{The RMSE in itself has a perception component because of the square. The RMSE is a very commonly used estimator, nonetheless one could imagine using a metric which does reflect human perception more closely, see for example the structural similarity index (SSIM) \parencite{DBLP:journals/tip/WangBSS04}. This usually leads to problems with subjectivity.}, in our case this usually is determined by whether sensible artifacts are present. As all the compared techniques are unbiased, given unlimited time, all of them would converge to the same image. Artifacts are usually areas or edges which will converge very slowly, in practice maybe never. When we say a technique has a bad image quality, we mean that artifacts are present. 
 
 \begin{align}\label{eq:sigmaCor}
 \sigma \sim \frac{1}{\sqrt{N}}
@@ -47,16 +47,15 @@ The test machine we use for comparisons is an Intel i7-4790K CPU @ 4GHz, 32 GB R
 We tried to identify problematic light and object constellations, which are causing trouble for various kinds of techniques. The most prominent and comprehensible scenarios are to be covered bellow. 
 
 \begin{description}
-    \item[1. High Frequency.] 
-    \item[2. Level of Detail.]
-    \item[3. High variantion of light power.] 
-    \item[4. High number of contributing light sources.]
-    \item[5. Non-axis aligned planes.]
-    \item[6. Highly occluding planes.]
-    \item[7. Tiny but important solid angles.]
+    \item[1. High Frequency.] Rapid changes of close pixels can happen for two main reasons. Either there is a physical edge and thus the rays from the eye hit another object, or an object cast a hard shadow. The human observer is more forgiving when the variance changes together with the object material, while variance changes for the latter scenario usually are more irritating. With a lot fine shadows respectively strong light sources casting sharp light edges choosing the correct light source to sample can get tricky. A powerful light source can dominate an estimating data structure but may only be visible in a few spots. An estimator thus can quickly become bad while it was perfectly fine for a neighboring pixel. 
+    \item[2. Level of Detail.] Highly varying object sizes and as such potential detail is the cause for a set of well known problems in computer graphics. Especially, the choice of data structures are affected. A data structure can store a lot of data and thus spend a lot of resources on some big object but in the end the camera might only focus on a different tiny detail and as such make most of the data useless. This problems are usually addressed with adaptive data structures.
+    \item[3. High variantion of light power.] Some algorithms rely on a correlation between incident flux on a shading point and the power of a light source. This is the basis for the power-based technique compared to uniform. Also the number of photons shot from a light source can be based on the light power and thus its alleged importance. This assumption is often useful, but can quickly cause problems when a strong light source is occluded close to a small light source which illuminates important details.
+    \item[4. High number of contributing light sources.] The construction and lookup times of the acceleration data structures have to scale well, so that even in the case that a shading point is illuminated by many light sources rendering can stay efficient.
+    \item[5. Non-axis aligned planes.] Skewed planes usually won't alight with the boundaries of the underlying data structures unless data structures like a BSP tree are used. Especially, rigid data structures like a grid can produce artifacts when the estimator seemingly arbitrarily changes. 
+    \item[6. Highly occluding areas.] Large dark areas where most parts are occluded except a few spots where just a handful of photons may arrive can cause problems when trying to build meaningful estimators. Adaptive techniques may increase their search radius which can lead to unexpected behavior. Or estimators can't be build meaningfully with too few photons available.
+    \item[7. Tiny but important solid angles.] The difference between a black box and an illuminated box can be a tiny hole or crack where a lot of light may enter and then scatter within. Also a small object that gets illuminated by a very strong but distant light source, e.g. the sun. The solid angle might by so tiny, that it is numerically very unlikely that photons would ever hit the object, but it may still be the main source of brightness.
 \label{li:problemcases}
 \end{description} 
-% which problematic setups we have / we can solve
 
 \subsection{Test scenes}
 
@@ -85,7 +84,7 @@ We describe the most important problem cases we had in mind when designing the S
 \label{li:stanfordmuseum}
 \end{itemize}
 \paragraph{San Miguel}
-\parencite{Sanmiguel}
+\textcite{Sanmiguel}
 
 
 
@@ -98,7 +97,7 @@ We describe the most important problem cases we had in mind when designing the S
 
 \subsection{Techniques}
 
-% which implementations will be compared
+We give an brief overview over the techniques that we identified as interesting for comparison. \textit{Uniform} and \textit{power-based} sampling are naive techniques that are natively implemented in PBRT. Additionally, PBRTs just recently released take on many light sampling is referred to as \textit{spatial}, see section~\ref{}\todo{add reference to previouswork when done}. We compare these three existing techniques with our own techniques \textit{cdfgrid}, \textit{photontree} and \textit{cdftree} introduced in Table~\ref{tb:techniques}. All three of our techniques use interpolation, as this produces the cleanest results for human observers. Nonetheless, we also list \textit{cdfgrid no Int}, which uses no interpolation. The images produced by this technique usually contain artifacts, but nonetheless performs very well on the MSE plots as the overall variance is better. For later plots we spare previously clearly worse performing techniques to focus our discussion.
 
 \subsection{Parameter Comparison}
 
