@@ -35,6 +35,7 @@ We often plot and compare based on RMSE, therefor the RMSE is an estimator for o
 \end{subfigure}
 
 \caption{A visual comparison of no interpolation vs trilinear interpolation. Even though we already have a rather high sample per pixel count, (a) shows many clear variance edges of the underlying grid cells and various artifacts across the scene. Also it is remarkable how many fireflies are visible and how almost none of them are present in (b). It is quite apparent that a human observer would grade the image quality of (b) much higher, but surprisingly the RMSE of (a) is significantly smaller, $39.8$ versus $47.3$. The reason being, that aside of the fireflies and artifacts, the majority of pixels in (a) are less noisy. The difference in noise is less apparent at first, but is well illustrated on the white/gray wall to the left of the Buddah.}
+\label{fig:intComparison}
 \end{figure}
 
 
@@ -62,7 +63,7 @@ We tried to identify problematic light and object constellations, which are caus
 We designed a special scene, called \textit{Stanford-Museum}, for most of the comparisons we present in this chapter. This scene covers all aforementioned problem cases and thus gives a good impression about strengths and weaknesses of each technique. The simplicity of the scene allows the reader to clearly correlate variance with the problem cases, but ultimately does not provide a photorealistic appeal. On the other hand we present two more scenes, \textit{San Miguel} and \textit{Zero-day}, for a comparison on real scenes with all sorts of details.
 
 \paragraph{Stanford-Museum}
-
+\label{sec:stanfordmuseum}
 \begin{figure}[ht]\centering
 \input{figures/StanfordMuseum.tex}
 \caption{The reference image for \textit{Stanford-Museum} sampled with PBRTs directlighting integrator. Instead of NEE every light source is queried for any shading point. Max depth is one, thus no indirect illumination is present. All phenomenons from listing~\ref{li:problemcases} and more appear in this scene. Detailed descriptions and intentions of the zoomed areas are listed in~\ref{li:stanfordmuseum}.
@@ -84,13 +85,15 @@ We describe the most important problem cases we had in mind when designing the S
 \label{li:stanfordmuseum}
 \end{itemize}
 \paragraph{San Miguel}
-\textcite{Sanmiguel}
+San Miguel by \textcite{Sanmiguel} is a popular scene and was on the book cover of the second edition of PBRT. It offers a highly detailed and photorealistic appeal and therefor is great for illustrative purposes and evaluating our techniques in a high detail scene. As such it also serves as a realistic stress test which includes all kinds of materials, reflections, transparencies and shapes. Many of which were intentionally spared in the design of \textit{Stanford-Museum}. We intended San Miguel to be a realistic test to make sure everything works as intended. The original scene only has one light source, a distant environment light, which indeed was the only cause for problems for PNEE. Due to the current implementation, which very well may get improved in the future, the photon count had to be set higher than it normally should have. This was the only found issue.
 
-
+The scene had to be enriched with more light sources to function as a test scene for our purpose. As the original c4d files are not available anymore the light sources had to be pasted manually.\unsure{ist das unwichtig? rauslassen?} There are several closed rooms in all directions to the yard. All rooms got augmented with clusters of light sources, which may constitute some realistic illumination within the rooms, but do not affect the yard respectively the view of the rendered image. In total there are 1274 light sources in the scene, of which only 13 do actually affect the view port. This was needed to be able to render a meaningful reference image. Therefor, all light sources were removed, except the 13 significant ones, and then the scene was rendered with PBRTs spatial technique with 8192 samples per pixel in 16.5 hours. This yielded a good reference image, while all other images are rendered with all 1274 light sources, even though we know they should actually not affect the desired image.
 
 \paragraph{Zero-Day}
 
-\parencite{Beeple}
+Zero-Day from \textcite{Beeple} is also a very interesting and beautiful scene that in fact provides many light sources natively. With 10000 light sources\todo{confirm} it has by far the most light sources in our tests, but interestingly still doesn't make the strongest argument for PNEE. Almost all light sources are very weak and the scene is quite open, thus occlusion does not play a significant role; therefor the weaknesses of PBRTs spatial are not revealed.
+
+The reference image was rendered ...\todo{add} due to the lack of an better option.
 
 
 
@@ -101,7 +104,7 @@ We give an brief overview over the techniques that we identified as interesting 
 
 \subsection{Parameter Comparison}
 
-
+\unsure{remove this chapter? Too much dump data, not highly interesting unless someone wants to reimplement}
 
 %%%%%%%%%%%%%%%%%
 \label{ch:ev:photontree}
@@ -121,55 +124,97 @@ We give an brief overview over the techniques that we identified as interesting 
 
 \section{Equal time comparisons}
 
-\begin{figure}
-    \centering
-    \includegraphics[width=1\textwidth]{figures/plots/SM_all_mse_report.pdf}
-    \caption{Stanford Museum comparison}
-    \label{fig:gasfdgds}
-\end{figure}
+In this section we compare and discuss our results for various techniques. We show two kinds of graphs: a $\sigma$ versus time in seconds graph and a $\sigma$ versus number of pixel samples (ps) graph; all in logarithmic scales. The time-plots make sense intuitively. The ps-plots are interesting because our test scenes for the most part do not contain fancy techniques or features that significantly increase rendering times per pixel (as e.g. \textit{photontree} does). In real world renderers though these techniques may very well exist and as such the proportional increase of rendering time per pixel sample introduced by PNEE might be significantly lowered; which in turn would make the ps-plot more significant. Additionally, it may be a better indication of how efficient a technique is disregarding the potentially sub-optimal implementation.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=1\textwidth]{figures/plots/SM_Main.pdf}
-    \caption{Stanford Museum comparison}
-    \label{fig:asfsgfa}
-\end{figure}
+All data for the results showed and discussed here are available at \url{https://github.com/AndiMiko/PNEE-data}. The data contains the source for the graphs, calculated MSE and RMSE, all result images in .exr format and equally named .txt files which contain a copy of the original .pbrt configuration file and some additional rendering run logs \& analytics.
 
-%\begin{figure}
-%    \centering
-%    \includegraphics[width=1\textwidth, trim=0 0 2200 0, clip]{figures/plots/SM_Main_quad.pdf}
-%    \caption{Stanford Museum comparison}
-%    \label{fig:asasfffa}
-%\end{figure}
-
-\begin{figure}
-    \centering
-    \adjincludegraphics[width=0.5\textwidth, trim={{.0\width} {.0\height} {.25\width} {.0\height}},clip]{figures/plots/SM_Main_quad.pdf}
-    \caption{Stanford Museum comparison}
-    \label{fig:asddhrgfdgffa}
-\end{figure}
-
-\begin{figure}
-    \centering
-    \adjincludegraphics[width=1\textwidth, trim={{.0\width} {.0\height} {.25\width} {.0\height}},clip]{figures/plots/SM_Main_quad.pdf}
-    \caption{Stanford Museum comparison}
-    \label{fig:asghgffasfdgffa}
-\end{figure}
+\subsection{Stanford-Museum}
 
 \begin{figure}
     \centering
     \begin{subfigure}{.5\textwidth}
       \centering
-        \adjincludegraphics[width=1\textwidth, trim={{.0\width} {.0\height} {.25\width} {.0\height}},clip]{figures/plots/SM_Main_quad.pdf}
-        \caption{Stanford Museum comparison}
-        \label{fig:asgffagsgsgsfdgffa}
+        \adjincludegraphics[width=1\textwidth, trim={{.06\width} {.08\height} {.371\width} {.15\height}},clip]{figures/plots/SM_Main_t.pdf}
+        \caption{}
+        \label{fig:smmain_t}
     \end{subfigure}%
     \begin{subfigure}{.5\textwidth}
-        \adjincludegraphics[width=1\textwidth, trim={{.0\width} {.0\height} {.25\width} {.0\height}},clip]{figures/plots/SM_Main_quad.pdf}
-        \caption{Stanford Museum comparison}
-        \label{fig:asgffasgdgdssfdgffa}
+        \adjincludegraphics[width=1\textwidth, trim={{.06\width} {.08\height} {.371\width} {.15\height}},clip]{figures/plots/SM_Main_ps.pdf}
+        \caption{}
+        \label{fig:smmain_ps}
     \end{subfigure}
+    \caption{Stanford Museum comparison}
+    \label{fig:smmain}
 \end{figure}
+
+
+Considering that the plots in figure~\ref{fig:smmain} are logarithmic on both scales we see vast differences between the techniques; we discuss the most interesting phenomena here. Table~\ref{tb:sm_settings} shows the used settings. The time-plot~\ref{fig:smmain_t} includes the preprocessing time. For this reason PNEE techniques start at a later point, usually around 100 seconds. Setting may be adjusted for specific desired rendering times, e.g. to better compete in the sub 100 second range; in our case we decided to have the same render settings for all pixel sample times, as we mainly aim for the most interesting comparisons in the middle section of the plots. Log-log plots should usually be a straight line---we explain the observable curvature in~\ref{fig:smmain_t} with the preprocessing time. The graph is quickly catching up what it has lost due to the preprocess. The ps-plot~\ref{fig:smmain_ps} confirms this: as preprocessing time doesn't play a role the curvature in the beginning is gone. In the end we see the opposite effect. As the image is already very well converged the very last errors are probably not very well estimated by PNEE anymore. For this reason the PNEE techniques seem to slowly loose the very large advantage they previously had and gradually converge against what is only solvable with brute force. Slight imperfections in the reference image may also be the cause to this.\footnote{We have the comfort of being able to assume to have a nearly perfect reference image in a rather complex scene, as discussed in~\ref{sec:stanfordmuseum}. For the other scenes we do not have this possibility and for this reason we are not even considering this high number of samples per pixels in the upcoming plots.} Note, that the illustrated pixel sample numbers are already far above usual and the plots are still very far away from actually converging together. The curvature begins slightly at around 1024 samples per pixel, while data at above 4096 samples per pixel is mostly only interesting for scientific purposes. This is also reflected by the anomalies at around 16K pixel samples. Surprisingly, PNEE techniques are not affected, whereas \textit{uniform}, \textit{power} and \textit{spatial} are. While we are not certain, our explanation is that the halton sampler used by PBRT ran out of random numbers and starts looping there. We found slight correlative variance edges/lines that indicated this, especially in the completely broken out \textit{uniform} 32K pixel sample image.
+
+Focusing on the actual graphs we see a very clear winner: \textit{cdfgrid (no Int)}. The naive version performs slightly better than its interpolated counterpart. The ps-plot reveals that this advantage is mostly due to the additional processing cost of the interpolation, as graphs are almost glued together there. Artifacts are better interpolated but overall variance increases. What weights stronger should likely be scene dependant. Even though by the numbers \textit{cdfgrid no Int} may be regarded as best performing in presented plots we are confident that a human observer would choose \textit{cdfgrid} as the clear winner, refer to figure~\ref{fig:intComparison}.
+
+The \textit{spatial} graph moves very inconsistently and interestingly, at first glance, the slope in the middle area might suggest that it should surpass all techniques at a later stage. A deeper analysis reveals that the inverted effect that we previously discussed about the curvature appears to be responsible. The technique creates several strong artifacts which give it a negative headstart, while it is correcting its own mistakes the slope is heavily favored. Mentally connecting the 16 ps and 8K ps dots in the ps- and time-plot might give a good indication of how efficient the technique would be if it would actually work in these scenarios (good but still worse than PNEE). The very same effect appears to cause the bump in the 64 ps point of the \textit{cdftree} technique. This highlights problems with the consistency of both techniques, nonetheless, these problems may rarely appear in naturally modeled scenes, as such the theoretical performance can be regarded as quite good, with both techniques occupying the midfield. 
+
+As expected, \textit{uniform} and \textit{power} are performing significantly worse. The only arguments going for them are that they have no settings and the rendered images have a very even \enquote{undone-look}, as there are no artifacts or any differences in variance by design. Other than that they are clearly not suited for such scenes, even tough with roughly thousand light sources we are far away from imaginable extremes.
+
+\textit{Photontree} was a surprise on the other hand. While early tests already indicated that the workload within the integrator is clearly too high the final results on the time-graph are quite striking. We want to further highlight the ps-graph. While results look much better there it is still highly surprising that it merely competes with the naive techniques. We expected clearly better results on the ps-graph, but apparently there are too many artifacts as seen in figure~\ref{fig:discontinuityEdges}\footnote{The artifacts are much more subtle in the end results.}. Visually comparing the 4K ps image of \textit{photontree} and \textit{uniform} was even more irritating\todo{add figure to appendix?}. We had to double-check that the MSE calculation was done properly, because the \textit{photontree} image looked much better except for a few unpleasant artifacts. Indeed it appears that the square in the MSE calculation really kicks in here, the artifacts are heavily punished in our plots. In conclusion, on the ps-plot we would easily favor the \textit{photontree} images, but the time-plot clearly deprives \textit{photontree} of any viability.
+
+Overall the log-log plots are already indicating the vast differences, but visually comparing even more so highlights the gaps. The results range from completely unusable to excellent\todo{add figure of all techniques?}. \textit{Cdfgrid} does not only dominate the plots, but also its ease of use and visual comparison satisfy all demands.
+
+\begin{center}
+
+\begin{tabular*}{\textwidth}{@{}ll@{}}\toprule
+technique & settings \\ \midrule
+
+cdfgrid no Int & photonCount: 96.000.000 \\
+& Max grid cells: 96 \\
+& Uniform floor: 0.1 \\
+& no interpolation \\
+cdfgrid & photonCount: 96.000.000 \\
+& Max grid cells: 96 \\
+& Uniform floor: 0.1 \\
+& Trilinear interpolation \\
+photontree & photonCount: 96.000.000 \\
+& Collection Method: NN \\
+& NN-count: 192 \\
+& Uniform floor: 0.1 \\
+& Adaptive Kernel Regression \\
+cdftree & photonCount: 50.000.000 \\
+& CDF count: 150.000 \\
+& Collection Method: NN \\
+& NN-count: 16 \\ 
+& Uniform floor: 0.1 \\
+& Adaptive Kernel Regression \\
+& Photon threshold: 20 \\
+
+\bottomrule
+\end{tabular*}
+\captionof{table}{Render settings for Stanford-Museum for the plots in figure~\ref{fig:smmain}.}
+\label{tb:sm_settings}
+\end{center}
+
+
+\begin{figure}
+    \centering
+    \adjincludegraphics[width=.7\textwidth, trim={{.06\width} {.08\height} {.371\width} {.15\height}},clip]{figures/plots/SM_Main_t.pdf}
+    \caption{Stanford Museum comparison}
+    \label{fig:smmain_t1}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \adjincludegraphics[width=.7\textwidth, trim={{.06\width} {.08\height} {.371\width} {.15\height}},clip]{figures/plots/SM_Main_ps.pdf}
+    \caption{Stanford Museum comparison}
+    \label{fig:smmain_ps1}
+\end{figure}
+
+
+
+
+\subsection{San Miguel}
+
+
+\subsection{Zero-Day}
+
 
 \section{Memory comparisons}
 

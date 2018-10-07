@@ -85,3 +85,5 @@ Writing:
 how long can I refer to an introduced variable e.g. k?
 
 4.1 Form of storage, empty section ok?
+
+referenz zu bild in fussnote statt cite?
