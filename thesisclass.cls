@@ -234,13 +234,13 @@
 %% ----------------------------------
 %% |  Style of appendix numbering   |
 %% ----------------------------------
- \renewcommand\appendix{\par 
-   \setcounter{section}{0}% 
-   \setcounter{subsection}{0}% 
-   \setcounter{figure}{0}%
-   \renewcommand\thesection{\Alph{section}}% 
-   \renewcommand\thefigure{\Alph{section}.\arabic{figure}} 
-   \renewcommand\thetable{\Alph{section}.\arabic{table}}}
+% \renewcommand\appendix{\par 
+%   \setcounter{section}{0}% 
+%   \setcounter{subsection}{0}% 
+%   \setcounter{figure}{0}%
+%   \renewcommand\thesection{\Alph{section}}% 
+%   \renewcommand\thefigure{\Alph{section}.\arabic{figure}} 
+%   \renewcommand\thetable{\Alph{section}.\arabic{table}}}
 %% --- End of appenix numbering style ---
 
 

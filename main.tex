@@ -15,7 +15,7 @@
  pdfauthor={Andreas Mikolajewski},
  pdftitle={Efficient datastructures and sampling of many light sources for Next Event Estimation},
  pdfsubject={Photon-based Next Event Estimation},
- pdfkeywords={Computer graphics, photorealism, path tracer, Next Event Estimation}
+ pdfkeywords={Computer graphics, photorealism, path tracer, Next Event Estimation, importance sampling}
 }
 
 
@@ -66,6 +66,7 @@
 \includeonly{
 titlepage,
 content,
+chapters/abstract,
 chapters/introduction,
 chapters/fundamentals,
 chapters/previouswork,
@@ -73,6 +74,7 @@ chapters/PNEE,
 chapters/implementation,
 chapters/evaluation,
 chapters/prospect,
+chapters/appendix,
 acronym
 }
 
@@ -104,7 +106,7 @@ acronym
 \include{titlepage}
 \blankpage
 
-
+\include{chapters/abstract}
 %% -------------------
 %% |   Directories   |
 %% -------------------
@@ -127,6 +129,11 @@ acronym
 \include{chapters/prospect}
 
 \include{acronym}
+
+\appendix 
+%\addcontentsline{toc}{chapter}{APPENDICES}
+
+\include{chapters/appendix}
 
 
 %% --------------------
