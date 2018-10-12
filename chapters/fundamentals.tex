@@ -107,12 +107,12 @@ The rendering equation (\ref{eq:req}) then is numerically estimated as such.
 L(x, \omega) =  L_e(x, \omega) + \frac{1}{N} \sum_{i=1}^{N} \frac{f_r(\omega_i, x, \omega) L_i(x, \omega_i)\cos\theta_i}{p(\omega_i)}
 \end{align}
 
-We discuss the probability distribution function $p(x)$ in the next section. \unsure{Formel nun korrekt? Passt alles?}
+We discuss the probability distribution function $p(\omega_i)$ in the next section. \unsure{Dürfte nun passen}
 
 \subsection{Probability Distribution Function}
 \label{sec:PDF}
 
-For a numerical solution samples (e.g. points, directions, ...) are needed, these samples can be taken for example uniformly or based on a given Probability Distribution Function (PDF). Throughout this work we refer to a PDF both in the discrete as well as in the continuous case, more strictly the discrete case is commonly referred to as Probability Mass Function (PMF) and the continuous case is referred to as Probability Density Function. Suppose that a random experiment yields random results $\omega$, we define a random Variable $X$ which maps the results to a set $\mathcal{A} \subseteq \mathbb{R}$.
+For a numerical solution samples (e.g. points, directions, ...) are needed, these samples can be taken for example uniformly or based on a given Probability Distribution Function (PDF). Throughout this work we refer to a PDF both in the discrete as well as in the continuous case, more strictly the discrete case can be referred to as Probability Mass Function (PMF) and the continuous case is commonly referred to as Probability Density Function. Suppose that a random experiment yields random results $\omega$, we define a random Variable $X$ which maps the results to a set $\mathcal{A} \subseteq \mathbb{R}$.
 
 \begin{align}
 X: \Omega \rightarrow \mathcal{A}
@@ -245,15 +245,93 @@ This means that the number of samples has to be quadrupled to halve the error. T
 
 \subsection{Multiple Importance Sampling}
 
+When a particular PDF is only suited to sample a certain part of a function, while others may be working for different parts, Multiple Importance Sampling can be used to combine strong densities. Let $n$ be the number of importance sampling strategies, $N_i$ the number of samples for strategy $i$ and $p_i$ the density of the $i$'th strategy. MIS is applied as follows:
+
+\begin{align}
+F = \sum_{i=1}^{n}\sum_{j=1}^{N_i}\frac{w_i(x_j)f(x_j)}{N_i \cdot p_i(x_j)}.
+\label{eq:mis}
+\end{align}
+
+The trivial case is to set constant weights, but this is not optimal as variance essentially adds up. A better approach is for example the Balance Heuristic
+
+\begin{align}
+w_i(x_j) = \frac{N_i \cdot p_i(x_j)}{\sum_{k=1}^{n} N_k \cdot p_k(x_j)}.
+\label{eq:powerheuristic}
+\end{align}
+
+Samples with a higher probability are getting more weight, while samples with small probabilities increase the variance with just $\frac{1}{p_i}$.
+
 \section{Path Tracing}
+
+There are several ways how the rays can actually be traced to solve equation~\ref{eq:req}. Distribution ray tracing \parencite{DBLP:conf/siggraph/CookPC84}, for example, starts one ray and then splits into many rays at each intersection. Other famous variants of ray tracers are Whitted-style ray tracing \parencite{DBLP:journals/cacm/Whitted80}, Bidirectional Path-tracing (BDPT) \parencite{DBLP:conf/rt/LafortuneW96} and Metropolis Light Transport \parencite{DBLP:conf/siggraph/VeachG97}.
+
+We focus our discussions on path tracing even though many concepts can also be adopted to the aforementioned techniques. In path tracing only one indirect light path is continued for each intersection point, although for each pixel many paths are started. This incidentally provides free anti-aliasing when pixel samples are chosen properly. The color of the pixel is calculated by averaging all paths. The segment depth of a path is probabilistically determined by Russian Roulette (RR) to stay unbiased.
+
 \subsection{Next Event Estimation}
 \label{sec:NEE}
 
+It is usually too unlikely to hit a light source with a randomly chosen reflection ray, in the case of mass-less point light sources even impossible. The process of deterministically connecting an intersection point with a light source is called Next Event Estimation. Therefor the rendering equation (\ref{eq:req}) has to be split. So far the rendering equation was composed of the emission $L_e$ and reflected radiance $L_r$ as follows:
+
+\begin{align}
+L(x, \omega_i) = L_e(x, \omega_i) + L_r(x, \omega_i).
+\end{align}
+
+Where $L_r(x, \omega_i)$ is the same as $L_r(y, -\omega_i)$ at the next intersection point $y$. The radiance at $y$ is composed of $L_e$ and $L_r$ as well. Therefor we can split up the reflected radiance into a direct and indirect term.
+
+\begin{align}
+L(x, \omega) &= L_e(x, \omega) \\
+& \qquad + \int_{\Omega}f_r(\omega_i, x, \omega) L_e(y, -\omega_i)\cos\theta_i \dif\omega_i \\
+& \qquad + \int_{\Omega}f_r(\omega_i, x, \omega) L_r(y, -\omega_i)\cos\theta_i \dif\omega_i \\
+&= L_e(x,\omega) + L_{\text{direct}}(x, \omega) + L_{\text{indirect}}(x,\omega)
+\end{align}
+
+Assuming only one light source, a point light source can now be sampled within the $L_{\text{direct}}$ term as follows. Let $y_l$ be the position of the light, $\omega_{y_l\rightarrow x}$ the vector from $y_l$ to $x$, $V(x,y)$ the visibility between $x$ and $y$ ($1$ when visible, else $0$) and $\Phi_g$ the flux of an isotropic point light, then 
+
+\begin{align}
+L_{\text{direct}}(x, \omega) &= \int_{\Omega}f_r(\omega_i, x, \omega) L_e(y, -\omega_i)\cos\theta_i \dif\omega_i \\
+&= f_r(\omega_{y_l\rightarrow x}, x, \omega) \frac{\Phi_g}{4\pi||y_l-x||^2} V(x, y_l) \cos\theta_i.
+\end{align}
+
+For an area light source we take the integral over its surface $A$
+
+\begin{align}
+L_{\text{direct}}(x, \omega) = \int_{A_{LQ}}f_r(\omega_{y \rightarrow x}, x, \omega) L_e(y, \omega_{y \rightarrow x}) G(x,y)V(x,y) \dif A_y.
+\end{align}
+
+where $G(x, y)$ is the geometry term
+
+\begin{align}
+G(x,y) = \frac{\cos\theta_i\cos\theta_j}{||x-y||^2}.
+\end{align}
+
+The integral is numerically estimated with Monte Carlo Integration
+
+\begin{align}
+L_{\text{direct}}(x, \omega) \approx \frac{1}{N_s} \sum_{i=1}^{N_s} \frac{f_r(\omega_{y_i \rightarrow x}, x, \omega) L_e(y_i, \omega_{y_i \rightarrow x}) G(x,y_i)V(x,y_i)}{p(y_i)}.
+\end{align}
+
+This constitutes a distinct problem (sampling the light source surface) which is necessary for area lights but we explicitly do not address it throughout this work. As such we differentiate between $p_L(k_j)$ which is the probability of choosing the $k_j$-th light source and $p(y_i|k_j)$ which is the probability of choosing point $y_i$ on the $k_j$-th light source. Finally, the direct light is then numerically estimated as
+
+\begin{align}
+L_{\text{direct}}(x, \omega) \approx \frac{1}{N_s} \sum_{i=1}^{N_s} \frac{f_r(\omega_{y_i \rightarrow x}, x, \omega) L_e(y_i, \omega_{y_i \rightarrow x}) G(x,y_i)V(x,y_i)}{p_L(k_j)p(y_i|k_j)}.
+\end{align}
+
+% The objective of this work is to estimate $p(\omega) \propto L_i(x,\omega_i)$ as good as possible.
+
+\section{Photon Mapping}
+\label{sec:PM}
+...
+\section{Datastructures}
+\subsection{Grid}
+\subsection{Octree}
+\subsection{k-d Tree}
 
 
-
-
-
+\section{Interpolation}
+\subsection{Scattered data}
+\subsection{Structured data}
+...\unsure{All other sections are fine?}
+\section{Machine Learning}
 
 %% ==============
 %\section{Rendering equation}

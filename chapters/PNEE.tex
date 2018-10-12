@@ -422,10 +422,10 @@ F = \sum_{i=1}^{n}\sum_{j=1}^{N_i}\frac{w_i(x_j)f(x_j)}{N_i \cdot p_i(x_j)}.
 \label{eq:mis}
 \end{align}
 
-We see potential distinctive synergy with PNEE, as we might have a good indication of the quality of our estimators through for example the photon count, similar to the confidence weight $\lambda$ introduced in section~\ref{ch:adckernelreg}. This confidence could be incorporated to adaptively choose either the number of samples $N_i$ or calculate $w_i(x_j)$ accordingly. The choice of $w_i(x_j)$ can be either fixed or the usually better option is to use the so-called power heuristic (equation~\ref{eq:powerheuristic})\parencite{veach1997robust}. 
+We see potential distinctive synergy with PNEE, as we might have a good indication of the quality of our estimators through for example the photon count, similar to the confidence weight $\lambda$ introduced in section~\ref{ch:adckernelreg}. This confidence could be incorporated to adaptively choose either the number of samples $N_i$ or calculate $w_i(x_j)$ accordingly. The choice of $w_i(x_j)$ can be either fixed or the usually better option is to use the so-called power heuristic \parencite{veach1997robust}
 
 \begin{align}
-w_i(x_j) = \frac{N_i \cdot p_i(x_j)^\beta}{\sum_{k=1}^{n} N_k \cdot p_k(x_j)^\beta}
+w_i(x_j) = \frac{N_i \cdot p_i(x_j)^\beta}{\sum_{k=1}^{n} N_k \cdot p_k(x_j)^\beta}.
 \label{eq:powerheuristic}
 \end{align}
 
