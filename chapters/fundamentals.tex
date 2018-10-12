@@ -80,7 +80,7 @@ L(\theta) = \frac{\dif^2\Phi}{\dif\cos\theta\dif\omega}.
 
 \section{Sampling}
 
-Instead of tracing single particles in an attempt to simulate the actual physics, we choose paths that numerically represent probabilities of the physical events. \unsure{Ist das so korrekt formuliert?} As the rendering equation is continuous and infinitely recursive a numerical solution is needed to estimate it. The approximation of a definite integral with the help of random samples is called Monte Carlo Integration. Sampling describes the choice of random variables based on a given probability density to reduce the variance of these numerical methods.
+Instead of tracing single particles in an attempt to simulate the actual physics, we choose paths that numerically represent probabilities. As the rendering equation is continuous and infinitely recursive a numerical solution is needed to estimate it. The approximation of a definite integral with the help of random samples is called Monte Carlo Integration. Sampling describes the choice of random variables based on a given probability density to reduce the variance of these numerical methods.
 
 \subsection{Monte Carlo Integration}
 \label{sec:montecarlo}
@@ -104,10 +104,10 @@ The rendering equation (\ref{eq:req}) then is numerically estimated as such.
 
 \begin{align}
 \label{eq:reqmc}
-L(x, \omega) =  L_e(x, \omega) + \frac{2\pi}{N} \sum_{i=1}^{N} f_r(\omega_i, x, \omega) L_i(x, \omega_i)\cos\theta_i
+L(x, \omega) =  L_e(x, \omega) + \frac{1}{N} \sum_{i=1}^{N} \frac{f_r(\omega_i, x, \omega) L_i(x, \omega_i)\cos\theta_i}{p(\omega_i)}
 \end{align}
 
-Where the $2\pi$ has to be added to adjust for the fact that the integral $\int_\Omega$ over a solid angle is, in fact, a multi-dimensional integral in spherical coordinates $\int_{\phi = -\pi}^{\pi}\int_{\theta=0}^{\frac{\pi}{2}}$ and the calculation would be skewed otherwise. \unsure{Ist das so korrekt gesagt?}
+We discuss the probability distribution function $p(x)$ in the next section. \unsure{Formel nun korrekt? Passt alles?}
 
 \subsection{Probability Distribution Function}
 \label{sec:PDF}

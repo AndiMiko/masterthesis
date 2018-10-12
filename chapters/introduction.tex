@@ -12,7 +12,7 @@ These questions spark a variety of techniques and sub-techniques, our Photon-bas
 
 With path tracing each path is started at the eye and only one refraction is considered at each intersection. The depth of the path is commonly limited by Russian Roulette (RR). For each pixel, a multitude of paths are started from random positions within the pixel (providing free Anti-aliasing). Aside from the single main path which covers indirect lighting, it is very effective to use Next Event Estimation (NEE) at every intersection point. NEE does estimate the direct lighting by deterministically connecting each intersection point to a light source. The rendering equation can be split up into a direct and indirect lighting part to enable this without introducing bias (see section~\ref{sec:NEE}).
 
-With an ever-expanding complexity of modeled scenes, the presence of many light sources greatly contributes to a natural and appealing image. Choosing the best light sources for NEE thus gets more and more important, with modern path tracers taking up to 50\% of today's rendering time, partially because calculating the visibility term is costly. Many lights usually lead to many occluded respectively localized light influences. As the incident light integral is estimated with finitely many samples with Monte Carlo Integration the variance of this estimation is greatly dependant on how well the sampling probabilities fit the estimated function. For this reason, estimating good probability density functions (PDF) over the importance of light sources is a promising topic for research.
+With an ever-expanding complexity of modeled scenes, the presence of many light sources greatly contributes to a natural and appealing image. Choosing the most contributing light sources for NEE thus gets more and more important, with modern path tracers taking up to 50\% of today's rendering time for direct lighting calculations, mainly because evaluating the visibility term is costly. Many lights usually lead to many occluded respectively localized light influences. As the incident light integral is estimated with finitely many samples with Monte Carlo Integration the variance of this estimation is greatly dependant on how well the sampling probabilities fit the estimated function. For this reason, estimating good probability density functions (PDF) over the importance of light sources is a promising topic for research.
 
 In this work, we present a novel technique, Photon-based Next Event Estimation (PNEE). The idea is to scatter out photons from the light sources and use them to build up a data structure which later can be used to build a PDF within the integrator. There are several design decisions that can be made through the phases of PNEE.
 
@@ -25,14 +25,14 @@ In this work, we present a novel technique, Photon-based Next Event Estimation (
 
 For each of this phases, we explore several sub-techniques, combine them and evaluate them against each other as well as other established techniques for NEE. We achieved speedups between 50-100x in balanced test scenes, with the efficiency further scaling up as the lighting complexity of the scene increases. Nonetheless, all techniques have their own special kinds of artifacts that may not show up in the MSE but can be very irritating for a human observer. We mitigate these problems effectively and present strong results within three different test scenes that cover a high range of lighting situations.
 
-\unsure{does addition of Github repos fit here?}
+\unsure{The source code is probably nice. Should I exclude the masterthesis repo though? It is the latex code of the document.}
 \blfootnote{
-The code, test scenes and test result images can be found on the following Github repositories.
+All sources, test scenes, test results and images can be found at:
 
 \begin{itemize}
     \item \url{https://github.com/AndiMiko/pbrt-v3}
     \item \url{https://github.com/AndiMiko/pbrt-scenes}
     \item \url{https://github.com/AndiMiko/PNEE-data}
-    \item \url{https://github.com/AndiMiko/masterthesis}
+    \item \url{https://github.com/AndiMiko/masterthesis} 
 \end{itemize}
 }

@@ -12,15 +12,15 @@ In this chapter we compare all the techniques we implemented with plain uniform 
 \end{align}
 
 
-We often plot and compare based on RMSE; therefore the RMSE is an estimator for our image quality. When we argue about image quality we rather refer to the perceived image quality\footnote{The RMSE in itself has a perception component because of the square. The RMSE is a very commonly used estimator; nonetheless one could imagine using a metric which does reflect human perception more closely, see for example the structural similarity index (SSIM) \parencite{DBLP:journals/tip/WangBSS04}. This usually leads to problems with subjectivity.}, in our case this usually is determined by whether sensible artifacts are present. Figure~\ref{fig:intComparison} illustrates how the MSE and subjective image quality can differ. As all the compared techniques are unbiased, given unlimited time, all of them would converge to the same image. Artifacts are usually areas or edges which will converge very slowly, in practice maybe never. When we say a technique has a bad image quality, we mean that artifacts are present. 
+We often plot and compare based on RMSE; therefore, the RMSE is an estimator for our image quality. When we argue about image quality, we rather refer to the perceived image quality\footnote{The RMSE in itself has a perception component because of the square. The RMSE is a very commonly used estimator; nonetheless one could imagine using a metric which does reflect human perception more closely, see for example the structural similarity index (SSIM) \parencite{DBLP:journals/tip/WangBSS04}. This usually leads to problems with subjectivity.}; in our case this usually is determined by whether sensible artifacts are present. Figure~\ref{fig:intComparison} illustrates how the MSE and subjective image quality can differ. As all the compared techniques are unbiased, given unlimited time, all of them would converge to the same image. Artifacts are usually areas or edges which will converge very slowly, in practice maybe never. When we say a technique has a bad image quality, we mean that artifacts are present. 
 
-As the standard deviation is proportional to the inverse root of the number of pixel samples (equation~\ref{eq:sigmaCor}) it quickly becomes unfeasible to converge an image by further increasing $N$. For this reason, increasing the efficiency per pixel sample is crucial.
+As the standard deviation is proportional to the inverse root of the number of pixel samples (equation~\ref{eq:sigmaCor}), it quickly becomes unfeasible to converge an image by further increasing $N$. For this reason, increasing the efficiency per pixel sample is crucial.
 
 \begin{align}\label{eq:sigmaCor}
 \sigma \sim \frac{1}{\sqrt{N}}
 \end{align}
 
-We optimized our analysis to the 128 to 2048 samples per pixel range\unsure{correct? Whats the sweetspot?}, as this is a common range for real-world production. After an introduction into our setup and general test environment in the next section~\ref{sec:setup}, we continue into the most interesting part: equal time comparisons in section~\ref{sec:etc}.
+We optimized our analysis to focus on the 128 to 2048 samples per pixel range, as this is a common range for real-world production. After an introduction into our setup and general test environment in the next section~\ref{sec:setup}, we continue into the most interesting part: equal time comparisons in section~\ref{sec:etc}.
 
 
 \begin{figure}
@@ -37,7 +37,7 @@ We optimized our analysis to the 128 to 2048 samples per pixel range\unsure{corr
    \label{fig:SMInt}
 \end{subfigure}
 
-\caption{A visual comparison of no interpolation versus trilinear interpolation. Even though we already have a rather high sample per pixel count, (a) shows many clear variance edges of the underlying grid cells and various artifacts across the scene. Also, it is remarkable how many fireflies are visible and how almost none of them are present in (b). It is quite apparent that a human observer would grade the image quality of (b) much higher, but surprisingly the RMSE of (a) is significantly smaller, $39.8$ versus $47.3$. The reason being, that aside of the fireflies and artifacts, the majority of pixels in (a) are less noisy. The difference in noise is less apparent at first, but is well illustrated on the white/gray wall to the left of the Buddha.}
+\caption{A visual comparison of no interpolation versus trilinear interpolation. Even though we already have a rather high sample per pixel count, (a) shows many clear variance edges of the underlying grid cells and various artifacts across the scene. Also, it is remarkable how many fireflies are visible and how almost none of them are present in (b). It is quite apparent that a human observer would grade the image quality of (b) much higher, but surprisingly the RMSE of (a) is significantly smaller, at $39.8$ versus $47.3$. The reason being that, apart from the fireflies and artifacts, the majority of pixels in (a) are less noisy. The difference in noise is less apparent at first, but is well illustrated on the white/gray wall to the left of the Buddha.}
 \label{fig:intComparison}
 \end{figure}
 
@@ -51,13 +51,13 @@ The test machine we use for comparisons is an Intel i7-4790K CPU @ 4GHz, 32 GB R
 We tried to identify problematic light and object constellations, which are causing trouble for various kinds of techniques. The most prominent and comprehensible scenarios are to be covered below. 
 
 \begin{description}
-    \item[1. High Frequency.] Rapid changes to adjacent pixels can happen for two main reasons. Either there is a physical edge and thus the rays from the eye hit another object, or an object cast a hard shadow. The human observer is more forgiving when the variance changes together with the object material, while variance changes for the latter scenario usually are more irritating. With a lot fine shadows respectively strong light sources casting sharp light edges choosing the correct light source to sample can get tricky. A powerful light source can dominate an estimating data structure but may only be visible in a few spots. An estimator thus can quickly become bad while it was perfectly fine for a neighboring pixel. 
-    \item[2. Level of Detail.] Highly varying object sizes and as such potential detail is the cause for a set of well-known problems in computer graphics. Especially, the choice of data structures is affected. A data structure can store a lot of data and thus spend a many resources on some big object but in the end the camera might only focus on a different tiny detail and as such make most of the data useless. This problems are usually addressed with adaptive data structures.
-    \item[3. High variation of light power.] Some algorithms rely on a correlation between incident flux on a shading point and the power of a light source. This is the basis for the power-based technique compared to \textit{Uniform}. Also, the number of photons shot from a light source can be based on the light power and thus its alleged importance. This assumption is often useful, but can quickly cause problems when a strong light source is occluded close to a small light source which illuminates important details.
-    \item[4. High number of contributing light sources.] The construction and lookup times of the acceleration data structures have to scale well, so that even in the case that a shading point is illuminated by many light sources rendering can stay efficient.
-    \item[5. Non-axis aligned planes.] Skewed planes usually won't alight with the boundaries of the underlying data structures unless data structures like a BSP tree are used. Especially, rigid data structures like a grid can produce artifacts when the estimator seemingly arbitrarily changes. 
-    \item[6. Highly occluded areas.] Large dark areas where most parts are occluded except a few spots where just a handful of photons may arrive can cause problems when trying to build meaningful estimators. Adaptive techniques may increase their search radius which can lead to unexpected behavior. Or estimators can't be build meaningfully with too few photons available.
-    \item[7. Tiny but important solid angles.] The difference between a black box and an illuminated box can be a tiny hole or crack where a lot of light may enter and then scatter within. Also a small object that gets illuminated by a powerful but distant light source, e.g., the sun. The solid angle might be so tiny, that it is numerically very unlikely that photons would ever hit the object, but it may still be the main source of brightness.
+    \item[1. High Frequency.] Rapid changes to adjacent pixels can happen for two main reasons. Either there is a physical edge and thus the rays from the eye hit another object, or an object casts a hard shadow. The human observer is more forgiving when the variance changes together with the object material, whereas variance changes for the latter scenario are usually found to be more irritating. With a lot fine shadows respectively strong light sources casting sharp light edges, choosing the correct light source to sample can get tricky. A powerful light source can dominate an estimating data structure but may only be visible in a few spots. An estimator thus can quickly become bad while it was perfectly fine for a neighboring pixel. 
+    \item[2. Level of Detail.] Highly varying object sizes, and as such potential detail, is the cause for a set of well-known problems in computer graphics. The choice of data structures is especially affected. A data structure can store a lot of data and spend many resources on some big object, but in the end the camera might only focus on a different tiny detail which would make most of the data useless. These types of problems are usually addressed with adaptive data structures.
+    \item[3. High variation of light power.] Some algorithms rely on a correlation between incident flux on a shading point and the power of a light source. This is the basis for the power-based technique compared to \textit{Uniform}. Also, the number of photons shot from a light source can be based on the light power and thus its alleged importance. This assumption is often useful but can quickly cause problems when a strong light source is occluded close to a small light source which illuminates important details.
+    \item[4. High number of contributing light sources.] The construction and lookup times of the acceleration data structures have to scale well so that, even in the case that a shading point is illuminated by many light sources, rendering can stay efficient.
+    \item[5. Non-axis aligned planes.] Skewed planes usually won't align with the boundaries of the underlying data structures unless data structures like a BSP tree are used. In particular, rigid data structures like a grid can produce artifacts when the estimator seemingly arbitrarily changes. 
+    \item[6. Highly occluded areas.] Large, dark areas where most parts are occluded except a few spots where just a handful of photons may arrive can cause problems when trying to build meaningful estimators. Adaptive techniques may increase their search radius, which can lead to unexpected behavior. Another possibility is that estimators can't be built meaningfully with too few photons available.
+    \item[7. Tiny but important solid angles.] The difference between a black box and an illuminated box can be a tiny hole or crack where a lot of light may enter and then scatter within. Furthermore, a small object may get illuminated by a powerful but distant light source, e.g., the sun. The solid angle might be so tiny that it is numerically very unlikely that photons would ever hit the object, but still ultimately be the main source of brightness.
 \label{li:problemcases}
 \end{description} 
 
@@ -69,37 +69,35 @@ We designed a special scene, called \textit{Stanford-Museum}, for most of the co
 \label{sec:stanfordmuseum}
 \begin{figure}[ht]\centering
 \input{figures/StanfordMuseum.tex}
-\caption{The reference image for \textit{Stanford-Museum} sampled with PBRTs directlighting integrator. Instead of NEE every light source is queried for any shading point. Max depth is one, thus no indirect illumination is present. All phenomenons from listing~\ref{li:problemcases} and more appear in this scene. Detailed descriptions and intentions of the zoomed areas are listed in~\ref{li:stanfordmuseum}.
+\caption{The reference image for \textit{Stanford-Museum} sampled with PBRTs direct lighting integrator. Instead of NEE, every light source is queried for any shading point. Max depth is one, so no indirect illumination is present. All phenomenons from listing~\ref{li:problemcases} and more appear in this scene. Detailed descriptions and intentions of the zoomed areas are listed in~\ref{li:stanfordmuseum}.
 }
 \label{fig:stanfordmuseumref}
 \end{figure}
 
-We describe the most important problem cases we had in mind when designing the Stanford-Museum scene in figure~\ref{fig:stanfordmuseumref}, which is the reference image we calculate the RMSE against. The scene contains 4058 light sources, all of whom are point light sources. We chose point light sources because sampling a point on an area light source is not a concern of PNEE, thus reducing variance from other effects does disclose artifacts produced by our techniques more clearly. We also render the scene with a path tracer with a max depth parameter of one, again, using the same argument, as depth introduces variance from the indirect lighting term of the path tracer. Additionally, this makes rendering a nearly perfect reference image possible, by using PBRTs direct lighting integrator, which samples all point light sources for every intersection point. The reference image is rendered with 128 samples per pixel in 17 hours on our test machine and aside from anti-aliasing should be close to perfect. 
+We describe the most important problem cases we had in mind when designing the Stanford-Museum scene in figure~\ref{fig:stanfordmuseumref}, which is the reference image against which we calculate the RMSE. The scene contains 4058 light sources, all of which are point light sources. We chose point light sources because sampling a point on an area light source is not a concern of PNEE, thus reducing variance from other effects discloses artifacts produced by our techniques more clearly. We also render the scene with a path tracer with a max depth parameter of one, again, using the same argument, as depth introduces variance from the indirect lighting term of the path tracer. This also makes rendering a nearly perfect reference image possible by using PBRTs direct lighting integrator which samples all point light sources for every intersection point. The reference image is rendered with 128 samples per pixel in 17 hours on our test machine and, aside from anti-aliasing, should be close to perfect. 
 
 \begin{itemize}
-    \item[(1)] The dragon is 20 times smaller than the Buddha but is very close to the camera and as such takes up almost the same screen space. Several low-intensity point lights illuminate the dragon. The difference in size, as well as light intensity, constitute typical problem cases with LOD. Especially the illumination of the eyes is a rather extreme case, light source intensity is roughly 200.000 times less compared to the strongest light sources in the scene. Additionally, the left outline of the dragon is illuminated by various light sources from bellow in the scene, where the dragon takes up only an incredibly small solid angle and thus photons are very unlikely to hit the dragon.
-    \item[(2)] The Buddha stands out of all cells and as such is illuminated by almost all visible light sources in this scene. This is particularly a problem for example with \textit{Photontree}. There might be more light sources influencing a shading point, than the total number of nearest neighbors we collect. High geometric detail and blending of many light colors make the Buddha prone to fireflies.  All three Stanford models are also intended to add complexity for intersection tests to various parts of the scene. 
-    \item[(3)] The box has a very tiny split from which it casts long range, very bright, very thin and high frequent light rays. Additionally, many photons are stuck within the thin-walled box, which highly complicates building good estimators with PNEE on the outside. Several more of this boxes with varying properties and surroundings are present in the scene. 
-    \item[(4)] Similar to the Buddha this plane wall is illuminated by many light sources in the scene. Additionally, there is a matrix of point lights with varying brightness, distance, and color. This variety has to be mapped to smooth transitions and high frequencies accordingly. Similar scenarios to this one do also appear in other parts of the scene, for example in front of the bunny, also with many smooth transitions, but where difficulties brought by global illumination are replaced with many local soft shadows. 
-    \item[(5)] A cluster of roughly 1000 light sources. Only thin, non-axis-aligned walls separate it from several distinct lightning scenarios. Very high exposure (unintentionally) breaks anti-aliasing. Most light sources influence the Buddha softly from below. 
-    \item[(6)] Several non-axis-aligned thin walls cover up a small cluster of light sources and cast thin, high frequent light rays in many directions. Especially the rays casted onto the skewed box, where photons from within the box, as mentioned in (3), do no good for our estimators, do constitute a tricky shading scenario in various manners.
+    \item[(1)] The dragon is 20 times smaller than the Buddha but is very close to the camera and, as such, takes up almost the same screen space. Several low-intensity point lights illuminate the dragon. The difference in size, as well as light intensity, constitute typical problem cases with LOD. The illumination of the eyes in particular is a rather extreme case; light source intensity is roughly 200.000 times less compared to the strongest light sources in the scene. Additionally, the left outline of the dragon is illuminated by various light sources from below in the scene, where the dragon takes up an incredibly small solid angle. Therefore, photons are very unlikely to hit the dragon.
+    \item[(2)] The Buddha stands out most among all cells and as such is illuminated by almost all visible light sources in this scene. This is particularly a problem with \textit{Photontree}, for example. There might be more light sources influencing a shading point than the total number of nearest neighbors we collect. High geometric detail and blending of many light colors make the Buddha prone to fireflies.  All three Stanford models are also intended to add complexity for intersection tests to various parts of the scene. 
+    \item[(3)] The box has a very tiny split from which it casts very bright, thin, frequent, and long range light rays. Additionally, many photons are stuck within the thin-walled box, which highly complicates building good estimators with PNEE on the outside. Several more of these boxes with varying properties and surroundings are present in the scene. 
+    \item[(4)] Similar to the Buddha, this plane wall is illuminated by many light sources in the scene. Additionally, there is a matrix of point lights with varying brightness, distance, and color. This variety has to be mapped to smooth transitions and high frequencies accordingly. Similar scenarios to this one also appear in other parts of the scene, for example in front of the bunny: also with many smooth transitions, but where difficulties brought by global illumination are replaced with many local soft shadows. 
+    \item[(5)] A cluster of roughly 1000 light sources. Only thin, non-axis-aligned walls separate it from several distinct lighting scenarios. Very high exposure (unintentionally) breaks anti-aliasing. Most light sources influence the Buddha softly from below. 
+    \item[(6)] Several non-axis-aligned thin walls cover up a small cluster of light sources and cast thin, high frequent light rays in many directions. The rays casted onto the skewed box in particular constitute a tricky shading scenario in various manners. As discussed in (3), photons from within the box do no good for our estimators. 
     \item[(7)] Several strong light sources cast long range, smoothly fading, but sharp-edged light rays. A similar scenario is present on the other side of the Buddha, where colors also blend together. The rays closely pass quite dark cells. Again, strong light sources behind a thin wall interfere with our photon collection algorithms.
-    \item[(8)] A completely occluded light cluster with roughly 1000 light sources. In a real scene, this might be a different room of a house for example. There are four such occluded clusters in the scene.
+    \item[(8)] A completely occluded light cluster with roughly 1000 light sources. In a real scene, this might be a different room of a house, for example. There are four such occluded clusters in the scene.
 \label{li:stanfordmuseum}
 \end{itemize}
 \paragraph{San Miguel}
 \label{sec:sanmiguel}
-San Miguel by \textcite{Sanmiguel} is a popular scene and was on the book cover of the second edition of PBRT. It offers a highly detailed and photorealistic appeal and therefore is great for illustrative purposes and evaluating our techniques in a high detail scene. As such it also serves as a realistic stress test which includes all kinds of materials, reflections, transparencies, and shapes. Many of which were intentionally spared in the design of \textit{Stanford-Museum}. We intended San Miguel to be a realistic test to make sure everything works as intended. The original scene only has one light source, a distant environment light, which indeed was the only cause for problems for PNEE. Due to the current implementation, which very well may get improved in the future, the photon count had to be set higher than it normally should have. This was the only found issue.
+San Miguel by \textcite{Sanmiguel} is a popular scene and was on the book cover of the second edition of PBRT. It offers a highly detailed and photorealistic appeal and therefore is great for illustrative purposes and evaluating our techniques in a high detail scene. As such, it also serves as a realistic stress test which includes all kinds of materials, reflections, transparencies, and shapes---many of which were intentionally spared in the design of \textit{Stanford-Museum}. We intended San Miguel to be a realistic test to make sure everything works as intended. The original scene only has one light source: a distant environment light which, indeed, was the only cause for problems for PNEE. Due to the current implementation which very well may get improved in the future, the photon count had to be set higher than it normally should have. This was the only issue found.
 
-The scene had to be enriched with more light sources to function as a test scene for our purpose. As the original c4d files are not available anymore the light sources had to be pasted manually.\unsure{ist das unwichtig? rauslassen?} There are several closed rooms in all directions to the yard. All rooms got augmented with clusters of light sources, which may constitute some realistic illumination within the rooms, but do not affect the yard respectively the view of the rendered image. In total there are 1274 light sources in the scene, of which only 13 do actually affect the viewport. This was needed to be able to render a meaningful reference image. Therefore, all light sources were removed, except the 13 significant ones, and then the scene was rendered with PBRTs spatial technique with 8192 samples per pixel in 16.5 hours.\footnote{This might give spatial a slight advantage in later MSE calculations due to the general alignment of potential variance edges. This effect should be minimal though. Creating a fully unbiased reference was not feasible.} This yielded a good reference image, while all other images are rendered with all 1274 light sources, even though we know they should actually not affect the desired image.
+The scene had to be enriched with more light sources to function as a test scene for our purpose. As the original c4d files are not available anymore, the light sources had to be pasted manually. There are several closed rooms in all directions to the yard. All rooms were augmented with clusters of light sources. These may constitute some realistic illumination within the rooms but do not affect the yard respectively the view of the rendered image. In total there are 1274 light sources in the scene, of which only 13 actually affect the viewport. This was needed to be able to render a meaningful reference image. Therefore, all light sources were removed except the 13 significant ones, then the scene was rendered with PBRTs spatial technique with 8192 samples per pixel in 16.5 hours.\footnote{This might give spatial a slight advantage in later MSE calculations due to the general alignment of potential variance edges. This effect should be minimal though. Creating a fully unbiased reference was not feasible.} This yielded a good reference image. Although all other images are rendered with all 1274 light sources, this should not actually affect the desired image.
 
 \paragraph{Zero-Day}
 
 Zero-Day by \textcite{Beeple} is also a fascinating scene that actually provides many light sources natively. With 8916 light sources it has by far the most light sources in our tests, but interestingly still doesn't make the strongest argument for PNEE. Almost all light sources are very weak and the scene is quite open, thus occlusion does not play a significant role; therefore the weaknesses of PBRTs spatial are not revealed.
 
-The reference image was rendered with \textit{Spatial} due to the lack of a better option. With 12288 ps, the Sobol sampler, a max depth of seven and a 960x420 resolution the rendering took a bit over 12 hours. The image still shows a few fireflies and comparison against \textit{Spatial} itself is obviously biased. We used the Sobol sampler but for the comparison use the Halton sampler to reduce the correlation, so that the same random samples won't create the exact same fireflies at least.
-
-
+The reference image was rendered with \textit{Spatial} due to the lack of a better option. With 12288 ps, the Sobol sampler, a max depth of seven, and a 960x420 resolution, the rendering took a bit over 12 hours. The image still shows a few fireflies and comparison against \textit{Spatial} itself is obviously biased. We used the Sobol sampler for the reference but for the comparison use the Halton sampler to reduce the correlation, so that the same random samples would not create the exact same fireflies at least.
 
 \FloatBarrier
 \subsection{Techniques}
@@ -108,23 +106,65 @@ We give a brief overview of the techniques that we identified as interesting for
 
 \subsection{Parameter Comparison}
 
-\unsure{remove this section? Too much dump data, not highly interesting unless someone wants to reimplement}
+\begin{figure}
+    \centering
+    \begin{subfigure}{.25\textwidth}
+      \centering
+        \adjincludegraphics[width=1\textwidth, trim={{.06\width} {.08\height} {.34\width} {.11\height}},clip]{figures/plots/interpolation_plot.pdf}
+        \caption{}
+        \label{fig:intmain}
+    \end{subfigure}%
+    \begin{subfigure}{.25\textwidth}
+        \adjincludegraphics[width=1\textwidth, trim={{.06\width} {.08\height} {.34\width} {.11\height}},clip]{figures/plots/pc_plot.pdf}
+        \caption{}
+        \label{fig:pcplot}
+    \end{subfigure}%
+    \begin{subfigure}{.25\textwidth}
+        \adjincludegraphics[width=1\textwidth, trim={{.06\width} {.08\height} {.34\width} {.11\height}},clip]{figures/plots/unipow_plot.pdf}
+        \caption{}
+        \label{fig:unipowplot}
+    \end{subfigure}%
+    \begin{subfigure}{.25\textwidth}
+        \adjincludegraphics[width=1\textwidth, trim={{.06\width} {.08\height} {.34\width} {.11\height}},clip]{figures/plots/unifloor_plot.pdf}
+        \caption{}
+        \label{fig:unifloorplot}
+    \end{subfigure}
+    \caption{Log-log plots for parameter comparisons. \\
+    (a) ps-$\sigma$ plot comparing interpolation techniques. \\
+    (b) photon count-$\sigma$ plot illustrating convergence behavior. \\
+    (c) ps-$\sigma$ plot comparing photon sampling methods. \\
+    (d) Uniform floor-$\sigma$ plot illustrating the optimal choice of the parameter.}
+    \label{fig:parammain}
+\end{figure}
 
-%%%%%%%%%%%%%%%%%
-\label{ch:ev:photontree}
+In this section we evaluate some of the parameters against each other, and show a selection of plots (figure~\ref{fig:parammain}) that might be interesting to operate PNEE.
 
-%%%%%%%%%%%%%%%%%
-\label{ch:ev:cdftree}
+\paragraph{Interpolation}
 
-%%%%%%%%%%%%%%%%%%%%
+\begin{figure}
+    \centering
+    \includegraphics[width=1\textwidth]{figures/comparisons/int_comp.pdf}
+    \caption{Comparison of interpolation techniques. Rendered with \textit{Cdftree} @ 32 ps.}
+    \label{fig:intcomp}
+\end{figure}
 
+Plot~\ref{fig:intmain} illustrates the differences between the interpolation schemes introduced in section~\ref{ch:interpolation}. The two adaptive techniques \textit{adaptive (confidence weighted) Kernel Regression (AKR)} and \textit{Modified Shepard interpolation} clearly have an advantage, properly handling varying LOD. This is also reflected in the visual comparison of figure~\ref{fig:intcomp}. In section~\ref{sec:sm_eval} we show that trilinear interpolation in \textit{Cdfgrid} improves visual quality but increases variance as general noise is added. In this analysis no interpolation is clearly at a disadvantage because artifacts are too common as arbitrary placed CDFs are outliers. Artifacts are apparent with no interpolation. Shepard interpolation improves general smoothness, but suffers from maxima close to CDFs. \textit{AKR} does not show any downside neither in the graph nor in the visual comparison and will be used throughout all upcoming test renderings.
+
+\paragraph{Photon count}
+
+The photon count is an central parameter in PNEE. The optimal choice varies by technique and scene, but plot~\ref{fig:pcplot} gives a good indication of the convergence behavior. Saturation is reached a bit above 16 million photons (with 32 ps). Visual comparison indicated that small artifacts are still improving up until roughly 100 million, particularly in higher pixel sample ranges. As the cost of shooting photons is neglectable at above about 100 ps we choose higher values for our extended tests deep into high pixel sample numbers. For lower pixel samples or an interactive scenarios good results can be achieved at under 10 million photons.
+
+\paragraph{Photon sampling}
 \label{ch:ev:photonsampling}
 
+Plot~\ref{fig:unipowplot} illustrates the differences of sampling photons discussed in section~\ref{ch:shootph}. For the Stanford-Museum scene a power based sampling has a significant advantage. The advantage is especially important when memory is limited, time is limited or the technique is more sensible to a high photon count, e.g. \textit{CDFtree} with a machine learning clustering algorithm that scales worse.  
 
-%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{Uniform floor}
 \label{ch:ev:uniformfloor}
+The uniform floor plot (\ref{fig:unifloorplot}) is interesting because it shows that the parameter is not merely a necessity to stay unbiased, instead it actually improves image quality. This is expected for almost converged images, where mostly only the uniform floor would continue to improve artifacts. The image is rendered with 32 ps though, so quite early this parameter has a minima at around 8\%. The minima slightly increases with a growing number of pixel samples, hence we choose 10\% in all our tests.
 
-% which parameters did we try to configure. Which parameters turned out to be good and will be set as fixed?
+
+
 
 \section{Equal time comparisons}
 \label{sec:etc}
@@ -133,6 +173,10 @@ In this section, we compare and discuss our results for various techniques. We s
 All data for the results showed and discussed here are available at \url{https://github.com/AndiMiko/PNEE-data}. The data contains the source for the graphs, calculated MSE and RMSE, all result images in .exr format and equally named .txt files which contain a copy of the original .pbrt configuration file and some additional rendering run logs \& analytics.
 
 \subsection{Stanford-Museum}
+\label{sec:sm_eval}
+
+\label{ch:ev:photontree}
+\label{ch:ev:cdftree}
 
 \begin{figure}
     \centering
@@ -160,9 +204,9 @@ The \textit{Spatial} graph moves very inconsistently and interestingly, at first
 
 As expected, \textit{Uniform} and \textit{Power} are performing significantly worse. The only arguments going for them are that they have no settings and the rendered images have a very even \enquote{undone-look}, as there are no artifacts or any differences in variance by design. Other than that they are clearly not suited for such scenes, even tough with roughly a thousand light sources we are far away from imaginable extremes.
 
-\textit{Photontree} was a surprise on the other hand. While early tests already indicated that the workload within the integrator is clearly too high the final results on the time-graph are quite striking. We want to further highlight the ps-graph. While results look much better there it is still highly surprising that it merely competes with the naive techniques. We expected clearly better results on the ps-graph, but apparently, there are too many artifacts as seen in figure~\ref{fig:discontinuityEdges}\footnote{The artifacts are much more subtle in the end results.}. Visually comparing the 4K ps image of \textit{Photontree} and \textit{Uniform} was even more irritating\todo{add figure to appendix?}. We had to double-check whether the MSE calculation was done properly, since the \textit{Photontree} image looked so much better except for a few unpleasant artifacts. Indeed it appears that the square in the MSE calculation really kicks in here, the artifacts are heavily punished in our plots. In conclusion, on the ps-plot we would easily favor the \textit{Photontree} images, but the time-plot clearly deprives \textit{Photontree} of any viability.
+\textit{Photontree} was a surprise on the other hand. While early tests already indicated that the workload within the integrator is clearly too high the final results on the time-graph are quite striking. We want to further highlight the ps-graph. While results look much better there it is still highly surprising that it merely competes with the naive techniques. We expected clearly better results on the ps-graph, but apparently, there are too many artifacts as seen in figure~\ref{fig:discontinuityEdges}\footnote{The artifacts are much more subtle in the end results.}. Visually comparing the 4K ps image of \textit{Photontree} and \textit{Uniform} was even more irritating. We had to double-check whether the MSE calculation was done properly, since the \textit{Photontree} image looked so much better except for a few unpleasant artifacts. Indeed it appears that the square in the MSE calculation really kicks in here, the artifacts seem to be heavily punished in our graphs. In conclusion, on the ps-plot we would easily favor the \textit{Photontree} images, but the time-plot clearly deprives \textit{Photontree} of any viability.
 
-Overall the log-log plots are already indicating the vast differences, but visually comparing even more so highlights the gaps. The results range from completely unusable to excellent\todo{add figure of all techniques?}. Comparing, for example, the 128 ps \textit{Cdfgrid} image rendered in 159 seconds with the 16K ps \textit{Uniform} image rendered in 14551 seconds and similar MSE the speedup lies at roughly 90x. \textit{Cdfgrid} does not only dominate the plots, but also its ease of use and visual comparison satisfy all demands.
+Overall the log-log plots are already indicating the vast differences, but visually comparing even more so highlights the gaps. The results range from completely unusable to excellent. Comparing, for example, the 128 ps \textit{Cdfgrid} image rendered in 159 seconds with the 16K ps \textit{Uniform} image rendered in 14551 seconds and similar MSE the speedup lies at roughly 90x. \textit{Cdfgrid} does not only dominate the plots, but also its ease of use and visual comparison satisfy all demands.
 
 \begin{center}
 
@@ -184,11 +228,6 @@ Photon threshold & --- & --- & 20 & --- \\
 \label{tb:sm_settings}
 \end{center}
 
-
-
-
-
-
 \FloatBarrier
 \subsection{San Miguel}
 
@@ -209,17 +248,16 @@ Photon threshold & --- & --- & 20 & --- \\
     \label{fig:sanmain}
 \end{figure}
 
-Going into the San Miguel analysis we spared \textit{Photontree} because of its bad results and \textit{Cdfgrid no int} because results are very similar and all valuable insights were already made in the Stanford-Museum analysis. Checking the plots in figure~\ref{fig:sanmain} we again see the previously discussed phenomena like the curved graphs of the PNEE techniques. \textit{Spatial} is very straight now, as there is no specific scenario present that creates artifacts. Overall the plots look cleaner due to the absence of the high variety of problem cases as in Stanford-Museum. \textit{Uniform} and \textit{Power} swapped their ranking with a quite considerable gap. \textit{Power} and \textit{Cdfgrid} wiggle slightly for an unknown reason, but the effect is small enough to be potentially caused by randomness\unsure{Is this true? I don't have a better explanation. Better not to mention or what to say? Better word than randomness?} or potentially the bias of the reference image. \textit{Cdftree} is the only one appearing unstable, a visual comparison reveals one problematic area. It is very well possible that tuning the settings just a bit might already solve this issues, as this completely changes the dynamic of the underlying data structure---unfortunately in an unpredictable manner. Other than that results are really good and results even briefly surpass \textit{Cdfgrid} in the ps-graph. 
+Going into the San Miguel analysis we spared \textit{Photontree} because of its bad results and \textit{Cdfgrid no int} because results are very similar and all valuable insights were already made in the Stanford-Museum analysis. Checking the plots in figure~\ref{fig:sanmain} we again see the previously discussed phenomena like the curved graphs of the PNEE techniques. \textit{Spatial} is very straight now, as there is no specific scenario present that creates artifacts. Overall the plots look cleaner due to the absence of the high variety of problem cases as in Stanford-Museum. \textit{Uniform} and \textit{Power} swapped their ranking with a quite considerable gap. \textit{Power} and \textit{Cdfgrid} wiggle slightly for an unknown reason, but the effect is small enough to be potentially caused by variance or potentially the bias of the reference image. \textit{Cdftree} is the only one appearing unstable, a visual comparison reveals one problematic area. It is very well possible that tuning the settings just a bit might already solve this issues, as this completely changes the dynamic of the underlying data structure---unfortunately in an unpredictable manner. Other than that results are really good and results even briefly surpass \textit{Cdfgrid} in the ps-graph. 
 
 Nonetheless, overall \textit{Cdfgrid} does dominate this comparison as well. Visual comparison in figure~\ref{fig:migcomp} reflects what the graphs already have revealed. The high deviation of results compared to the Stanford-Museum plots illustrates that the efficiency of certain techniques is scene dependent. Used parameters are quite similar to Table~\ref{tb:sm_settings} and won't be listed again for this reason, but can be found in the Github repository.
 
 \begin{figure}
     \centering
-    \includegraphics[width=1\textwidth]{figures/comparisons/Mig_comp_same_slimmer.png}
+    \includegraphics[width=1\textwidth]{figures/comparisons/Mig_comp_same_slimmer.pdf}
     \caption{Cropped San Miguel comparison of the 256 ps images.}
     \label{fig:migcomp}
 \end{figure}
-\unsure{which comparison image of San Miguel do you like more? Equal or whole image}
 
 \FloatBarrier
 \subsection{Zero-Day}
@@ -248,9 +286,6 @@ The scene barely relies on occlusion. This shows that PNEEs unique advantage tha
 A visual comparison, once again is quite surprising. In fact, the MSE does not reflect the perceived noise; figure~\ref{fig:zdcomp} clearly shows that \textit{Power} has more noise pretty much everywhere, compared to relatively clean \textit{Cdfgrid} and \textit{Spatial}. We tried looking carefully for artifacts that could justify the similarity in MSE, but it remains a mystery.
 
 \textit{Cdfgrid} and \textit{Spatial} perform basically equal both visually as well as in MSE. With a clear visual advantage they are both very likely to be preferred against \textit{Power}.
-
-
-\todo{HALTON/SOBOL spatial}
 
 \begin{figure}
     \centering
